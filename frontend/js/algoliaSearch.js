@@ -5,9 +5,9 @@
 
 // Algolia configuration - Search API Key only (read-only)
 const ALGOLIA_CONFIG = {
-  applicationId: 'EEGT1E6OKE',
+  applicationId: 'ZC1H8MVX05',
   searchApiKey: '4dea24d6f6c0f12ac5e8d9b4e2f890c0', // Search API Key (read-only)
-  indexName: 'products'
+  indexName: 'productos_venta'
 };
 
 // Algolia Search Client (using CDN)

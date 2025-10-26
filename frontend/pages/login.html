@@ -22,11 +22,20 @@
     .btn-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     .btn-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(163, 6, 6, 0.3); }
     
-    /* Fix input text visibility */
+    /* Fix input text visibility - IMPROVED CONTRAST */
     input[type="email"],
     input[type="password"],
     input[type="text"] {
-      color: #1f2937 !important;
+      color: #111827 !important;
+      background-color: #ffffff !important;
+      font-weight: 500;
+    }
+    
+    input[type="email"]::placeholder,
+    input[type="password"]::placeholder,
+    input[type="text"]::placeholder {
+      color: #6b7280 !important;
+      opacity: 1;
     }
     
     input[type="email"]:focus,
@@ -35,28 +44,49 @@
       border-color: #a30606;
       outline: none;
       box-shadow: 0 0 0 3px rgba(163, 6, 6, 0.1);
+      background-color: #ffffff !important;
     }
     
-    /* Dark mode support */
+    /* Dark mode support - IMPROVED CONTRAST */
     .dark input[type="email"],
     .dark input[type="password"],
     .dark input[type="text"] {
-      background-color: #374151;
+      background-color: #1f2937 !important;
       border-color: #4b5563;
-      color: #f9fafb !important;
+      color: #f3f4f6 !important;
+      font-weight: 500;
     }
     
     .dark input::placeholder {
-      color: #9ca3af;
+      color: #9ca3af !important;
+      opacity: 1;
+    }
+    
+    .dark input:focus {
+      background-color: #1f2937 !important;
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
     }
     
     .dark .login-card {
-      background-color: rgba(31, 41, 55, 0.9);
+      background-color: rgba(17, 24, 39, 0.95) !important;
       border-color: #374151;
     }
     
     .dark body {
-      background: linear-gradient(to bottom right, #111827, #1f2937, #111827);
+      background: linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a);
+    }
+    
+    .dark h1 {
+      color: #f9fafb !important;
+    }
+    
+    .dark p {
+      color: #d1d5db !important;
+    }
+    
+    .dark label {
+      color: #e5e7eb !important;
     }
   </style>
 </head>

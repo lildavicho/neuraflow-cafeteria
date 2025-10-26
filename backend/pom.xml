@@ -112,7 +112,7 @@
         <!-- Algolia -->
         <dependency>
             <groupId>com.algolia</groupId>
-            <artifactId>algoliasearch-core</artifactId>
+            <artifactId>algoliasearch-client-java</artifactId>
             <version>3.16.0</version>
         </dependency>
 
