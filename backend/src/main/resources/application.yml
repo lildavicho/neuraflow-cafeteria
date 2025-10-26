@@ -59,8 +59,9 @@ firebase:
   service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:classpath:firebase/ucacuebar-firebase-adminsdk.json}
 
 algolia:
-  application-id: ${ALGOLIA_APP_ID:}
-  api-key: ${ALGOLIA_API_KEY:}
+  application-id: ${ALGOLIA_APP_ID:EEGT1E6OKE}
+  api-key: ${ALGOLIA_API_KEY:9c0c8a0e2f8f9d8b7c6a5e4d3c2b1a0f}
+  search-api-key: ${ALGOLIA_SEARCH_API_KEY:4dea24d6f6c0f12ac5e8d9b4e2f890c0}
   index-name: ${ALGOLIA_INDEX_NAME:products}
 
 payment:

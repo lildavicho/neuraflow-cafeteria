@@ -66,9 +66,7 @@
     <!-- Card -->
     <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-100">
       <div class="text-center mb-6">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-red-800 mb-4 shadow-lg">
-          <i data-lucide="key" class="w-8 h-8 text-white"></i>
-        </div>
+        <img src="/assets/logo.svg" alt="UCACUE Bar Logo" class="w-20 h-20 mx-auto mb-4">
         <h1 class="text-2xl font-bold text-gray-900 mb-2">Recuperar Contraseña</h1>
         <p class="text-sm text-gray-600">Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.</p>
       </div>
@@ -116,7 +114,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script type="module">
-    import '/js/api.js';
+    import * as authIntegration from '/js/authIntegration.js';
 
     // Initialize
     if (window.ui) {
@@ -149,15 +147,20 @@
       gsap.to(btn, { scale: 0.98, duration: 0.1 });
 
       try {
-        const { data } = await window.api.post('/auth/forgot', { email });
+        console.log('[ForgotPassword] Sending reset email to:', email);
+        const result = await authIntegration.resetPassword(email);
+        console.log('[ForgotPassword] Reset email sent:', result);
         
         // Success animation
         gsap.to(btn, { 
           backgroundColor: '#10b981', 
           duration: 0.3,
           onComplete: () => {
-            if (window.ui) {
-              ui.toast(data?.message || 'Si el correo existe, se enviaron instrucciones', 'success');
+            const message = result.message || 'Se ha enviado un correo para restablecer tu contraseña';
+            if (window.ui && window.ui.toast) {
+              window.ui.toast(message, 'success');
+            } else {
+              alert('✅ ' + message);
             }
             setTimeout(() => {
               window.location.href = '/pages/login.html';
@@ -166,6 +169,8 @@
         });
 
       } catch (err) {
+        console.error('[ForgotPassword] Error:', err);
+        
         // Error animation
         gsap.to(btn, { 
           x: [0, -10, 10, -10, 10, 0],
@@ -173,9 +178,12 @@
           ease: 'power2.inOut'
         });
         
-        const msg = err?.response?.data?.message || 'No se pudo procesar la solicitud';
-        if (window.ui) ui.toast(msg, 'error');
-        else alert(msg);
+        const msg = err.message || 'No se pudo procesar la solicitud';
+        if (window.ui && window.ui.toast) {
+          window.ui.toast(msg, 'error');
+        } else {
+          alert('❌ ' + msg);
+        }
 
         btn.disabled = false;
         btnText.textContent = 'Enviar Instrucciones';

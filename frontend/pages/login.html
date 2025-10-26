@@ -65,11 +65,9 @@
   <div id="loginContainer" class="w-full max-w-md px-6">
     <!-- Logo y título -->
     <div class="text-center mb-8">
-      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-red-800 mb-4 shadow-lg">
-        <i data-lucide="coffee" class="w-8 h-8 text-white"></i>
-      </div>
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">UCACUE Bar</h1>
-      <p class="text-gray-600">Sistema de Gestión Cafetería</p>
+      <img src="/assets/logo.svg" alt="UCACUE Bar Logo" class="w-24 h-24 mx-auto mb-4">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">UCACUE Bar</h1>
+      <p class="text-gray-600 dark:text-gray-400">Sistema de Gestión Cafetería</p>
     </div>
 
     <!-- Card principal -->
@@ -230,10 +228,13 @@
   
   <script type="module">
     import { ensureUnauth } from '/js/guard.js';
-    import { auth } from '/js/api.js';
+    import * as authIntegration from '/js/authIntegration.js';
+    
+    // Initialize auth state listener
+    authIntegration.initAuthStateListener();
     
     // Make auth available globally for debugging
-    window.authModule = auth;
+    window.authIntegration = authIntegration;
 
     // Wait for DOM to be ready
     document.addEventListener('DOMContentLoaded', () => {
@@ -313,28 +314,33 @@
       
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
+      const rememberMe = document.getElementById('rememberMe').checked;
       const btn = document.getElementById('loginBtn');
       const btnText = document.getElementById('loginBtnText');
       const spinner = document.getElementById('loginSpinner');
+      const icon = btn.querySelector('[data-lucide="log-in"]');
 
-      // Disable button and show loading
-      btn.disabled = true;
-      btnText.textContent = 'Iniciando...';
-      spinner.classList.remove('hidden');
-      gsap.to(btn, { scale: 0.98, duration: 0.1 });
+      // Validation
+      if (!email || !password) {
+        showError('Por favor completa todos los campos');
+        return;
+      }
+
+      // Lock button
+      lockButton(btn, btnText, spinner, icon, 'Iniciando...');
 
       try {
-        console.log('Attempting login with:', email);
-        const data = await auth.login(email, password, false);
-        console.log('Login response:', data);
+        console.log('[Login] Attempting login with:', email);
+        const result = await authIntegration.login(email, password, rememberMe);
+        console.log('[Login] Login successful:', result);
         
         // Success animation
         gsap.to(btn, { 
           backgroundColor: '#10b981', 
           duration: 0.3,
           onComplete: () => {
-            const role = (JSON.parse(localStorage.getItem('user') || '{}').role) || data.role;
-            if (role === 'ADMIN') {
+            // Redirect based on role
+            if (result.role === 'ADMIN') {
               window.location.href = '/pages/dashboard.html';
             } else {
               window.location.href = '/pages/pos.html';
@@ -343,6 +349,8 @@
         });
 
       } catch (error) {
+        console.error('[Login] Error:', error);
+        
         // Error animation
         gsap.to(btn, { 
           x: [0, -10, 10, -10, 10, 0],
@@ -350,14 +358,8 @@
           ease: 'power2.inOut'
         });
         
-        const msg = error?.response?.data?.message || 'Credenciales incorrectas';
-        if (window.ui) ui.toast(msg, 'error');
-        else alert(msg);
-
-        btn.disabled = false;
-        btnText.textContent = 'Iniciar Sesión';
-        spinner.classList.add('hidden');
-        gsap.to(btn, { scale: 1, duration: 0.2 });
+        showError(error.message || 'Credenciales incorrectas');
+        unlockButton(btn, btnText, spinner, icon, 'Iniciar Sesión');
       }
     });
 
@@ -371,42 +373,48 @@
       const btn = document.getElementById('registerBtn');
       const btnText = document.getElementById('registerBtnText');
       const spinner = document.getElementById('registerSpinner');
+      const icon = btn.querySelector('[data-lucide="user-plus"]');
 
       // Validations
+      if (!fullName || !email || !password) {
+        showError('Por favor completa todos los campos');
+        return;
+      }
+
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        if (window.ui) ui.toast('Email inválido', 'error');
-        else alert('Email inválido');
+        showError('Email inválido');
         return;
       }
 
       if (password.length < 8) {
-        if (window.ui) ui.toast('La contraseña debe tener al menos 8 caracteres', 'error');
-        else alert('La contraseña debe tener al menos 8 caracteres');
+        showError('La contraseña debe tener al menos 8 caracteres');
         return;
       }
 
-      // Disable button and show loading
-      btn.disabled = true;
-      btnText.textContent = 'Creando...';
-      spinner.classList.remove('hidden');
-      gsap.to(btn, { scale: 0.98, duration: 0.1 });
+      // Lock button
+      lockButton(btn, btnText, spinner, icon, 'Creando...');
 
       try {
-        console.log('Attempting register with:', { fullName, email });
-        await auth.register({ fullName, email, password });
-        console.log('Register successful');
+        console.log('[Register] Attempting registration:', { fullName, email });
+        const result = await authIntegration.register({ fullName, email, password });
+        console.log('[Register] Registration successful:', result);
         
         // Success animation
         gsap.to(btn, { 
           backgroundColor: '#10b981', 
           duration: 0.3,
           onComplete: () => {
-            if (window.ui) ui.toast('Cuenta creada exitosamente. Ahora puedes iniciar sesión.', 'success');
-            setTimeout(() => switchTab('login'), 1500);
+            showSuccess('Cuenta creada exitosamente. Ahora puedes iniciar sesión.');
+            setTimeout(() => {
+              unlockButton(btn, btnText, spinner, icon, 'Crear Cuenta');
+              switchTab('login');
+            }, 1500);
           }
         });
 
       } catch (error) {
+        console.error('[Register] Error:', error);
+        
         // Error animation
         gsap.to(btn, { 
           x: [0, -10, 10, -10, 10, 0],
@@ -414,22 +422,45 @@
           ease: 'power2.inOut'
         });
         
-        const msg = error?.response?.data?.message || 'No se pudo crear la cuenta';
-        if (window.ui) ui.toast(msg, 'error');
-        else alert(msg);
-
-        btn.disabled = false;
-        btnText.textContent = 'Crear Cuenta';
-        spinner.classList.add('hidden');
-        gsap.to(btn, { scale: 1, duration: 0.2 });
+        showError(error.message || 'No se pudo crear la cuenta');
+        unlockButton(btn, btnText, spinner, icon, 'Crear Cuenta');
       }
     });
 
-    // Google login (placeholder)
-    document.getElementById('googleLoginBtn').addEventListener('click', () => {
-      gsap.to('#googleLoginBtn', { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
-      if (window.ui) ui.toast('Autenticación con Google no configurada', 'warning');
-      else alert('Autenticación con Google no configurada');
+    // Google login
+    document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('googleLoginBtn');
+      
+      // Disable button
+      btn.disabled = true;
+      gsap.to(btn, { scale: 0.95, duration: 0.1 });
+
+      try {
+        console.log('[GoogleLogin] Attempting Google sign-in...');
+        const result = await authIntegration.loginWithGoogle();
+        console.log('[GoogleLogin] Google sign-in successful:', result);
+        
+        // Success - redirect
+        if (result.role === 'ADMIN') {
+          window.location.href = '/pages/dashboard.html';
+        } else {
+          window.location.href = '/pages/pos.html';
+        }
+
+      } catch (error) {
+        console.error('[GoogleLogin] Error:', error);
+        
+        // Error animation
+        gsap.to(btn, { 
+          x: [0, -10, 10, -10, 10, 0],
+          duration: 0.5,
+          ease: 'power2.inOut'
+        });
+        
+        showError(error.message || 'Error al iniciar sesión con Google');
+        btn.disabled = false;
+        gsap.to(btn, { scale: 1, duration: 0.2 });
+      }
     });
 
       // Animate all buttons on hover
@@ -442,6 +473,39 @@
         });
       });
     } // End initializePage
+
+    // Helper functions for button states and notifications
+    function lockButton(btn, btnText, spinner, icon, text) {
+      btn.disabled = true;
+      btnText.textContent = text;
+      spinner.classList.remove('hidden');
+      if (icon) icon.style.display = 'none';
+      gsap.to(btn, { scale: 0.98, duration: 0.1 });
+    }
+
+    function unlockButton(btn, btnText, spinner, icon, text) {
+      btn.disabled = false;
+      btnText.textContent = text;
+      spinner.classList.add('hidden');
+      if (icon) icon.style.display = 'inline';
+      gsap.to(btn, { scale: 1, duration: 0.2 });
+    }
+
+    function showError(message) {
+      if (window.ui && window.ui.toast) {
+        window.ui.toast(message, 'error');
+      } else {
+        alert('❌ ' + message);
+      }
+    }
+
+    function showSuccess(message) {
+      if (window.ui && window.ui.toast) {
+        window.ui.toast(message, 'success');
+      } else {
+        alert('✅ ' + message);
+      }
+    }
 
   </script>
 </body>
