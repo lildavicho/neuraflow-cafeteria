@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ucacue_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ucacue_erp
+      TZ: America/Guayaquil
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../db:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - ucacue_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  app:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ucacue_app
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - ucacue_network
+    volumes:
+      - app_logs:/app/logs
+      - app_uploads:/app/uploads
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: ucacue_mediamtx
+    restart: unless-stopped
+    environment:
+      MTX_PROTOCOLS: "tcp,udp,http,https,webrtc"
+      MTX_WEBRTCADDITIONALHOSTS: "localhost,192.168.1.100"
+    ports:
+      - "8554:8554"     # RTSP
+      - "1935:1935"     # RTMP
+      - "8888:8888"     # HLS
+      - "8889:8889"     # WebRTC HTTP
+      - "8189:8189/udp" # WebRTC UDP
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml
+    networks:
+      - ucacue_network
+
+  nginx:
+    image: nginx:stable
+    container_name: ucacue_nginx
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../frontend:/usr/share/nginx/html:ro
+      - nginx_logs:/var/log/nginx
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    networks:
+      - ucacue_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ucacue_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ucacue_network
+    command: redis-server --appendonly yes
+
+networks:
+  ucacue_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  app_logs:
+    driver: local
+  app_uploads:
+    driver: local
+  nginx_logs:
+    driver: local
+  redis_data:
+    driver: local

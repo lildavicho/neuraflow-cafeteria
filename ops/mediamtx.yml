@@ -1,0 +1,77 @@
+# MediaMTX Configuration for UCACUE Bar System
+
+# General
+logLevel: info
+logDestinations: [stdout]
+logFile: mediamtx.log
+
+# API
+api: yes
+apiAddress: :9997
+
+# Metrics
+metrics: yes
+metricsAddress: :9998
+
+# RTSP
+rtsp: yes
+protocols: [tcp, udp]
+rtspAddress: :8554
+rtspsAddress: :8555
+rtpAddress: :8000
+rtcpAddress: :8001
+
+# RTMP
+rtmp: yes
+rtmpAddress: :1935
+rtmpEncryption: no
+
+# HLS
+hls: yes
+hlsAddress: :8888
+hlsAlwaysRemux: no
+hlsSegmentCount: 7
+hlsSegmentDuration: 1s
+
+# WebRTC
+webrtc: yes
+webrtcAddress: :8889
+webrtcServerKey: ""
+webrtcServerCert: ""
+webrtcAllowOrigin: "*"
+webrtcTrustedProxies: []
+webrtcICEServers:
+  - urls: [stun:stun.l.google.com:19302]
+
+# Paths configuration
+paths:
+  cam1:
+    source: rtsp://admin:Adm1n99.@172.16.41.178:554/Streaming/Channels/101
+    sourceProtocol: tcp
+    sourceOnDemand: no
+    sourceOnDemandStartTimeout: 10s
+    sourceOnDemandCloseAfter: 10s
+    maxReaders: 10
+    srtReadPassphrase: ""
+    fallback: ""
+    
+    # Recording
+    record: no
+    recordPath: ./recordings/%path/%Y-%m-%d_%H-%M-%S.mp4
+    recordFormat: mp4
+    recordSegmentDuration: 1h
+    recordDeleteAfter: 24h
+    
+    # WebRTC specific
+    webrtcSimulcastV2: yes
+    
+  # Path for any additional camera  
+  all:
+    source: publisher
+    sourceProtocol: automatic
+    sourceAnyPortEnable: no
+    sourceFingerprint: ""
+    sourceOnDemand: yes
+    sourceOnDemandStartTimeout: 10s
+    sourceOnDemandCloseAfter: 10s
+    maxReaders: 10
