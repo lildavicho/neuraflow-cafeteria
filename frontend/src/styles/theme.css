@@ -1,0 +1,91 @@
+/* Sistema de Variables CSS UCACUE */
+
+:root {
+  /* Colores de marca */
+  --uc-brand: #C5161D;
+  --uc-brand-600: #a40f15;
+  --uc-brand-700: #8B0000;
+  --uc-brand-rgb: 197, 22, 29;
+  
+  /* Colores de estado */
+  --uc-accent: #1a73e8;
+  --uc-success: #10b981;
+  --uc-warning: #f59e0b;
+  --uc-danger: #ef4444;
+  --uc-info: #3b82f6;
+  
+  /* Texto y superficies (modo claro) */
+  --uc-ink: #111827;
+  --uc-ink-light: #374151;
+  --uc-ink-lighter: #6b7280;
+  --uc-surface: #ffffff;
+  --uc-surface-gray: #f9fafb;
+  --uc-surface-elevated: #ffffff;
+  --uc-border: #e5e7eb;
+  
+  /* Tabler overrides */
+  --tblr-primary: var(--uc-brand);
+  --tblr-primary-rgb: var(--uc-brand-rgb);
+  --tblr-primary-lt: #fbeeeb;
+  --tblr-body-color: var(--uc-ink);
+  --tblr-body-bg: var(--uc-surface-gray);
+}
+
+/* Modo oscuro */
+.dark {
+  --uc-ink: #f3f4f6;
+  --uc-ink-light: #d1d5db;
+  --uc-ink-lighter: #9ca3af;
+  --uc-surface: #0e0f12;
+  --uc-surface-gray: #1a1b1e;
+  --uc-surface-elevated: #27282c;
+  --uc-border: #374151;
+  
+  /* Tabler dark mode */
+  --tblr-body-color: var(--uc-ink);
+  --tblr-body-bg: var(--uc-surface);
+}
+
+/* Aplicar variables globales */
+:root,
+.dark body {
+  color: var(--uc-ink);
+  background-color: var(--uc-surface-gray);
+}
+
+/* Overrides de Tabler para usar brand */
+.btn-primary,
+.badge-primary,
+.alert-primary {
+  background-color: var(--uc-brand) !important;
+  border-color: var(--uc-brand) !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--uc-brand-600) !important;
+  border-color: var(--uc-brand-600) !important;
+}
+
+.text-primary {
+  color: var(--uc-brand) !important;
+}
+
+.border-primary {
+  border-color: var(--uc-brand) !important;
+}
+
+/* Focus states con brand */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--uc-brand);
+  box-shadow: 0 0 0 0.25rem rgba(var(--uc-brand-rgb), 0.25);
+}
+
+/* Links */
+a {
+  color: var(--uc-brand);
+}
+
+a:hover {
+  color: var(--uc-brand-600);
+}

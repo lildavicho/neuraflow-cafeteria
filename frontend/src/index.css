@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 antialiased;
+  }
+}
+
+@layer components {
+  /* === BUTTONS === */
+  .btn-brand {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand text-white font-semibold rounded-lg shadow-md;
+    @apply hover:bg-brand-600 hover:shadow-lg hover:-translate-y-0.5 active:bg-brand-700 active:translate-y-0;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand disabled:hover:translate-y-0;
+    @apply transition-all duration-200;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-transparent text-brand font-semibold rounded-lg border-2 border-brand;
+    @apply hover:bg-brand hover:text-white hover:-translate-y-0.5 active:bg-brand-700 active:translate-y-0;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
+    @apply transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-semibold rounded-lg;
+    @apply hover:bg-gray-300 dark:hover:bg-gray-600 hover:-translate-y-0.5 active:bg-gray-400 dark:active:bg-gray-500 active:translate-y-0;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400/40;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
+    @apply transition-all duration-200;
+  }
+
+  /* === LINKS === */
+  .link-brand {
+    @apply text-brand hover:text-brand-600 dark:hover:text-brand-400 underline-offset-2 hover:underline;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 rounded;
+    @apply transition-colors duration-200;
+  }
+
+  /* === INPUTS === */
+  .input-brand {
+    @apply w-full px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
+    @apply border-2 border-gray-300 dark:border-gray-600 rounded-lg;
+    @apply focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand dark:focus:border-brand;
+    @apply placeholder:text-gray-400 dark:placeholder:text-gray-500;
+    @apply disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed;
+    @apply transition-all duration-200;
+  }
+
+  /* === CARDS === */
+  .card-brand {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6;
+    @apply hover:shadow-lg transition-shadow duration-200;
+  }
+
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700;
+  }
+
+  .kpi {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200;
+  }
+}
+
+/* === ANIMATIONS === */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}

@@ -1,1 +1,15 @@
 node_modules
+
+# Environment files and secrets
+.env
+**/.env
+frontend/.env
+ops/migrate/.env
+
+# Firebase and cloud credentials
+serviceAccount*.json
+firebase_*.json
+firebase*.json
+
+# Build outputs
+frontend/dist

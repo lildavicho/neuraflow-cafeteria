@@ -37,7 +37,6 @@ public class ProductService {
     private final StockMovementRepository stockMovementRepository;
     private final UserRepository userRepository;
     private final AlgoliaService algoliaService;
-    private final EmailService emailService;
     
     public Page<ProductDTO> getAllProducts(String search, Long categoryId, Pageable pageable) {
         Page<ProductEntity> products;
@@ -159,16 +158,7 @@ public class ProductService {
     public List<ProductDTO> getLowStockProducts() {
         List<ProductEntity> products = productRepository.findLowStockProducts();
         
-        // Send email alerts for critical stock
-        for (ProductEntity product : products) {
-            if (product.getStock() <= 5) {
-                emailService.sendLowStockAlert(
-                    "admin@ucacue.edu.ec",
-                    product.getName(),
-                    product.getStock()
-                );
-            }
-        }
+        // Email deshabilitado en esta versión
         
         return products.stream()
             .map(this::convertToDTO)
@@ -228,14 +218,7 @@ public class ProductService {
         log.info("Stock updated for product {} ({}): {} {} -> {}", 
             product.getName(), product.getCode(), type, stockBefore, stockAfter);
         
-        // Check if low stock alert is needed
-        if (stockAfter <= product.getMinStock()) {
-            emailService.sendLowStockAlert(
-                "admin@ucacue.edu.ec",
-                product.getName(),
-                stockAfter
-            );
-        }
+        // Email deshabilitado en esta versión
         
         return convertToDTO(product);
     }

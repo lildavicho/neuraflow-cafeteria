@@ -31,7 +31,6 @@ public class SaleService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final StockMovementRepository stockMovementRepository;
-    private final EmailService emailService;
     
     private static final BigDecimal IVA_RATE = new BigDecimal("0.15");
     
@@ -87,14 +86,7 @@ public class SaleService {
             movement.setReferenceType("SALE");
             stockMovementRepository.save(movement);
             
-            // Check for low stock alert
-            if (product.getStock() <= product.getMinStock()) {
-                emailService.sendLowStockAlert(
-                    "admin@ucacue.edu.ec",
-                    product.getName(),
-                    product.getStock()
-                );
-            }
+            // Email deshabilitado en esta versión
         }
         
         // Calculate IVA and total
@@ -126,12 +118,7 @@ public class SaleService {
         sale.setItems(saleItems);
         sale = saleRepository.save(sale);
         
-        // Send order confirmation email
-        emailService.sendOrderConfirmation(
-            user.getEmail(),
-            sale.getInvoiceNumber(),
-            total.toString()
-        );
+        // Email deshabilitado en esta versión
         
         log.info("Sale created: {} for user {}", sale.getInvoiceNumber(), user.getEmail());
         
@@ -203,10 +190,12 @@ public class SaleService {
         summary.put("period", period);
         summary.put("startDate", startDate);
         summary.put("endDate", now);
-        summary.put("totalSales", totalSales != null ? totalSales : BigDecimal.ZERO);
-        summary.put("totalCount", totalCount != null ? totalCount : 0);
-        summary.put("averageSale", totalCount > 0 ? 
-            totalSales.divide(BigDecimal.valueOf(totalCount), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+        BigDecimal ts = (totalSales != null) ? totalSales : BigDecimal.ZERO;
+        long count = (totalCount != null) ? totalCount : 0L;
+        summary.put("totalSales", ts);
+        summary.put("totalCount", count);
+        summary.put("averageSale", count > 0 ? 
+            ts.divide(BigDecimal.valueOf(count), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
         summary.put("topProducts", topProducts);
         
         return summary;

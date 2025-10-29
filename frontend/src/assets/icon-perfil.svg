@@ -1,0 +1,22 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="perfilGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6d28d9;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Cabeza -->
+  <circle cx="24" cy="18" r="8" fill="url(#perfilGradient)" opacity="0.9">
+    <animate attributeName="opacity" values="0;0.9" dur="0.6s" fill="freeze"/>
+    <animateTransform attributeName="transform" type="scale" values="0 0; 1 1" dur="0.6s" additive="sum" fill="freeze"/>
+  </circle>
+  
+  <!-- Cuerpo -->
+  <path d="M 10 42 Q 10 30 24 30 Q 38 30 38 42 L 38 44 L 10 44 Z" fill="url(#perfilGradient)" opacity="0.9">
+    <animate attributeName="opacity" values="0;0.9" dur="0.6s" begin="0.3s" fill="freeze"/>
+  </path>
+  
+  <!-- Anillo decorativo -->
+  <circle cx="24" cy="24" r="16" fill="none" stroke="#8b5cf6" stroke-width="1.5" opacity="0.2"/>
+</svg>

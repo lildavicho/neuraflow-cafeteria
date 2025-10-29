@@ -44,14 +44,14 @@ public class UserEntity {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @Column(length = 100)
+    @Column(length = 100, unique = true)
     private String firebaseUid;
 
-    @Column(length = 6)
-    private String twoFactorCode;
+    @Column(length = 50)
+    private String provider;
 
-    @Column
-    private LocalDateTime twoFactorExpiry;
+    @Column(length = 255)
+    private String avatarUrl;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

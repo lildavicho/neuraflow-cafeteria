@@ -1,8 +1,12 @@
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\algo\DemandForecastService.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\algo\RecommendationService.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\BarApplication.java
+C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\config\AlgoliaConfig.java
+C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\config\DevDataLoader.java
+C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\config\FirebaseAdminConfig.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\config\RateLimitingConfig.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\config\SecurityConfig.java
+C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\controller\AdminController.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\controller\AuthController.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\controller\CategoryController.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\controller\ProductController.java
@@ -38,11 +42,13 @@ C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\s
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\repository\UserRepository.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\security\CustomUserDetails.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\security\CustomUserDetailsService.java
+C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\security\FirebaseTokenFilter.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\security\JwtAuthenticationFilter.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\security\JwtUtil.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\service\AlgoliaService.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\service\AuthService.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\service\EmailService.java
+C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\service\FirebaseService.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\service\IdempotencyService.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\service\ProductService.java
 C:\Users\vicom\OneDrive\Documentos\Sistema Bar FInal\ucacue-bar-spring\backend\src\main\java\com\ucacue\bar\service\SaleService.java

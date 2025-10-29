@@ -1,0 +1,13 @@
+{
+  "name": "ucacue-sync",
+  "type": "module",
+  "dependencies": {
+    "@google-cloud/firestore": "^7.11.0",
+    "dotenv": "^17.2.3",
+    "firebase-admin": "^12.7.0",
+    "mysql2": "^3.15.3"
+  },
+  "scripts": {
+    "sync": "node sync-realtime.js"
+  }
+}

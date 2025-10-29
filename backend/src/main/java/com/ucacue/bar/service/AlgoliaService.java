@@ -1,12 +1,13 @@
 package com.ucacue.bar.service;
 
-import com.algolia.search.SearchIndex;
+import com.algolia.api.SearchClient;
 import com.ucacue.bar.dto.ProductDTO;
 import com.ucacue.bar.entity.ProductEntity;
 import com.ucacue.bar.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -25,10 +26,13 @@ public class AlgoliaService {
     private final ProductRepository productRepository;
 
     @Autowired(required = false)
-    private SearchIndex<ProductDTO> productIndex;
+    private SearchClient searchClient;
+
+    @Value("${algolia.index-name:products}")
+    private String indexName;
 
     private boolean isAlgoliaConfigured() {
-        return productIndex != null;
+        return searchClient != null && indexName != null && !indexName.isBlank();
     }
 
     /**
@@ -41,8 +45,8 @@ public class AlgoliaService {
         }
 
         try {
-            ProductDTO dto = mapProductToDTO(product);
-            productIndex.saveObjectAsync(dto);
+            Map<String, Object> record = mapProductToAlgolia(product);
+            searchClient.saveObject(indexName, record);
             log.info("Product indexed in Algolia: {}", product.getId());
         } catch (Exception e) {
             log.error("Failed to index product in Algolia: {}", e.getMessage());
@@ -66,7 +70,7 @@ public class AlgoliaService {
         }
 
         try {
-            productIndex.deleteObjectAsync(productId);
+            searchClient.deleteObject(indexName, productId);
             log.info("Product deleted from Algolia: {}", productId);
         } catch (Exception e) {
             log.error("Failed to delete product from Algolia: {}", e.getMessage());
@@ -110,11 +114,11 @@ public class AlgoliaService {
         }
 
         try {
-            List<ProductDTO> dtos = products.stream()
-                .map(this::mapProductToDTO)
+            List<Map<String, Object>> records = products.stream()
+                .map(this::mapProductToAlgolia)
                 .collect(Collectors.toList());
-            
-            productIndex.saveObjectsAsync(dtos);
+
+            searchClient.saveObjects(indexName, records);
             log.info("Reindexed {} products in Algolia", products.size());
         } catch (Exception e) {
             log.error("Failed to reindex products in Algolia: {}", e.getMessage());
@@ -145,5 +149,26 @@ public class AlgoliaService {
         }
         
         return dto;
+    }
+
+    private Map<String, Object> mapProductToAlgolia(ProductEntity product) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("objectID", String.valueOf(product.getId()));
+        map.put("id", product.getId());
+        map.put("name", product.getName());
+        map.put("code", product.getCode());
+        map.put("price", product.getPrice());
+        map.put("stock", product.getStock());
+        map.put("minStock", product.getMinStock());
+        map.put("description", product.getDescription());
+        map.put("imageUrl", product.getImageUrl());
+        if (product.getCategory() != null) {
+            map.put("categoryName", product.getCategory().getName());
+            map.put("categoryId", product.getCategory().getId());
+        }
+        if (product.getStatus() != null) {
+            map.put("status", product.getStatus().name());
+        }
+        return map;
     }
 }

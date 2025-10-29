@@ -22,18 +22,7 @@ spring:
         format_sql: true
     show-sql: ${SHOW_SQL:true}
 
-  mail:
-    host: ${SMTP_HOST:smtp.gmail.com}
-    port: ${SMTP_PORT:587}
-    username: ${SMTP_USER:}
-    password: ${SMTP_PASS:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
+  # mail deshabilitado
 
   servlet:
     multipart:
@@ -55,8 +44,8 @@ security:
     refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800}
 
 firebase:
-  project-id: ${FIREBASE_PROJECT_ID:ucacuebar}
-  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:classpath:firebase/ucacuebar-firebase-adminsdk.json}
+  project-id: ${FIREBASE_PROJECT_ID:baru-fe8a3}
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:firebase_credentials.json}
 
 algolia:
   application-id: ${ALGOLIA_APP_ID:ZC1H8MVX05}
@@ -81,6 +70,9 @@ management:
     web:
       exposure:
         include: health,info,metrics
+  health:
+    mail:
+      enabled: false
   endpoint:
     health:
       show-details: always
