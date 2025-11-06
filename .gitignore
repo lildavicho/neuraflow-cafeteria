@@ -1,0 +1,15 @@
+# Build
+/target/
+/build/
+/dist/
+/node_modules/
+/out/
+
+# IDE
+/.idea/
+/.vscode/
+
+# Logs y configuraciones temporales
+*.log
+*.env
+.DS_Store
