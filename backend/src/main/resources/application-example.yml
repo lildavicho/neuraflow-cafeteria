@@ -1,0 +1,47 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=America/Guayaquil&createDatabaseIfNotExist=true
+    username: ${DB_USER}
+    password: ${DB_PASS}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: false
+  cache:
+    type: caffeine
+    cache-names: firebase-tokens, products-public
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=60s
+  mvc:
+    servlet:
+      path: /api
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 86400
+    refresh-expiration: 604800
+
+firebase:
+  project-id: ${FIREBASE_PROJECT_ID}
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}

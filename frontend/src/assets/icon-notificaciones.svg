@@ -1,0 +1,26 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="notifGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d97706;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Campana -->
+  <path d="M 24 10 L 24 12 M 16 32 L 16 24 Q 16 18 24 18 Q 32 18 32 24 L 32 32 Q 32 34 30 34 L 18 34 Q 16 34 16 32 Z" 
+        fill="url(#notifGradient)" opacity="0.9">
+    <animateTransform attributeName="transform" type="rotate" values="0 24 18; 10 24 18; -10 24 18; 0 24 18" dur="0.6s" repeatCount="indefinite"/>
+  </path>
+  
+  <!-- Badajo -->
+  <circle cx="24" cy="36" r="2" fill="url(#notifGradient)" opacity="0.9">
+    <animate attributeName="cy" values="36;38;36" dur="0.6s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Indicador de notificación -->
+  <circle cx="32" cy="14" r="4" fill="#ef4444" opacity="0.95">
+    <animate attributeName="r" values="4;5;4" dur="1s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.95;0.7;0.95" dur="1s" repeatCount="indefinite"/>
+  </circle>
+  <text x="32" y="16" text-anchor="middle" font-size="6" font-weight="bold" fill="white" font-family="Inter, sans-serif">3</text>
+</svg>
