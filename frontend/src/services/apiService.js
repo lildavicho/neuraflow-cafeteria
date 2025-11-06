@@ -1,135 +1,205 @@
-import axios from 'axios';
-import { getIdToken } from './authService';
+import axios from 'axios'
+import { getIdToken } from './authService'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const resolveApiBaseUrl = () => {
+  const explicitBase = import.meta.env.VITE_API_BASE_URL?.trim()
+  if (explicitBase) return explicitBase.replace(/\/$/, '')
 
-const apiClient = axios.create({
+  if (typeof globalThis !== 'undefined' && globalThis.location?.origin) {
+    try {
+      const url = new URL(globalThis.location.href)
+      const devPorts = new Set(['5173', '5174', '4173', '4174'])
+      if (devPorts.has(url.port)) {
+        const desiredPort =
+          (import.meta.env.VITE_API_DEV_PORT?.trim()) ||
+          (import.meta.env.VITE_API_PORT?.trim()) ||
+          '80'
+        const effectiveOrigin = `${url.protocol}//${url.hostname}${desiredPort ? `:${desiredPort}` : ''}`
+        return `${effectiveOrigin}/api`
+      }
+      return `${url.origin}/api`
+    } catch {
+      // fallback
+      return '/api'
+    }
+  }
+  return '/api'
+}
+
+export const API_BASE_URL = resolveApiBaseUrl().replace(/\/+$/, '')
+
+const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-});
+})
 
-apiClient.interceptors.request.use(
-  async (config) => {
-    const token = await getIdToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+api.interceptors.request.use(async (config) => {
+  const token = await getIdToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
 
-apiClient.interceptors.response.use(
+api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      localStorage.removeItem('user')
+      globalThis.location.href = '/login'
     }
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
-);
+)
 
-export const getProductos = async ({ search = '', page = 0, size = 20 } = {}) => {
-  try {
-    const response = await apiClient.get('/productos', {
-      params: { search, page, size },
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching productos:', error);
-    throw error;
+// ---- Dashboard ----
+export const fetchDashboardSnapshot = async () => {
+  const { data } = await api.get('/dashboard/snapshot')
+  return data
+}
+
+// ---- Products ----
+export const fetchProducts = async ({ search = '', page = 0, size = 20 } = {}) => {
+  const params = { page, size }
+  if (search) params.search = search
+  const { data } = await api.get('/products', { params })
+  return data
+}
+
+export const fetchPublicProducts = async () => {
+  const { data } = await api.get('/products/public')
+  return data
+}
+
+export const fetchCategories = async () => {
+  const { data } = await api.get('/categories')
+  return data
+}
+
+export const createProduct = async (payload) => {
+  const body = {
+    categoryId: payload.categoryId,
+    code: payload.code,
+    name: payload.name,
+    description: payload.description,
+    imageUrl: payload.imageUrl,
+    unit: payload.unit,
+    price: payload.price,
+    purchasePrice: payload.purchasePrice,
+    stock: payload.stock,
+    minStock: payload.minStock,
   }
-};
+  const { data } = await api.post('/products', body)
+  return data
+}
 
-export const getProductoById = async (id) => {
-  try {
-    const response = await apiClient.get(`/productos/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching producto:', error);
-    throw error;
+export const updateProduct = async (id, payload) => {
+  const body = {
+    categoryId: payload.categoryId,
+    code: payload.code,
+    name: payload.name,
+    description: payload.description,
+    imageUrl: payload.imageUrl,
+    unit: payload.unit,
+    price: payload.price,
+    purchasePrice: payload.purchasePrice,
+    minStock: payload.minStock,
+    status: payload.status,
   }
-};
+  const { data } = await api.put(`/products/${id}`, body)
+  return data
+}
 
-export const createProducto = async (payload) => {
-  try {
-    const response = await apiClient.post('/productos', payload);
-    return response.data;
-  } catch (error) {
-    console.error('Error creating producto:', error);
-    throw error;
-  }
-};
+export const removeProduct = async (id) => api.delete(`/products/${id}`)
 
-export const updateProducto = async (id, payload) => {
-  try {
-    const response = await apiClient.put(`/productos/${id}`, payload);
-    return response.data;
-  } catch (error) {
-    console.error('Error updating producto:', error);
-    throw error;
-  }
-};
+export const updateProductStock = async (id, { quantity, type, reason }) => {
+  const { data } = await api.post(`/products/${id}/update-stock`, null, {
+    params: { quantity, type, reason },
+  })
+  return data
+}
 
-export const deleteProducto = async (id) => {
-  try {
-    await apiClient.delete(`/productos/${id}`);
-  } catch (error) {
-    console.error('Error deleting producto:', error);
-    throw error;
-  }
-};
+// ---- Orders ----
+export const fetchOrders = async ({ status, page = 0, size = 20 } = {}) => {
+  const params = { page, size }
+  if (status) params.status = status
+  const { data } = await api.get('/orders', { params })
+  return data
+}
 
-export const getVentas = async ({ from, to, page = 0, size = 20 } = {}) => {
-  try {
-    const response = await apiClient.get('/ventas', {
-      params: { from, to, page, size },
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching ventas:', error);
-    throw error;
-  }
-};
+export const createOrder = async (payload) => {
+  const { data } = await api.post('/orders', payload)
+  return data
+}
 
-export const createVenta = async (payload) => {
-  try {
-    const response = await apiClient.post('/ventas', payload);
-    return response.data;
-  } catch (error) {
-    console.error('Error creating venta:', error);
-    throw error;
-  }
-};
+export const previewOrderTotals = async (items) => {
+  const { data } = await api.post('/orders/prices', { items })
+  return data
+}
 
-export const getEstadisticas = async ({ from, to } = {}) => {
-  try {
-    const response = await apiClient.get('/estadisticas', {
-      params: { from, to },
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching estadisticas:', error);
-    return {
-      ventasHoy: 0,
-      ordenesHoy: 0,
-      totalProductos: 0,
-      ticketPromedio: 0,
-    };
-  }
-};
+const postTransition = async (id, action, body) => {
+  const { data } = await api.post(`/orders/${id}/${action}`, body)
+  return data
+}
 
-export const getCategorias = async () => {
-  try {
-    const response = await apiClient.get('/categorias');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching categorias:', error);
-    return [];
-  }
-};
+export const acceptOrder = (id) => postTransition(id, 'accept')
+export const readyOrder = (id) => postTransition(id, 'ready')
+export const deliverOrder = (id, paymentReference) =>
+  postTransition(id, 'deliver', paymentReference ? { paymentReference } : null)
+export const cancelOrder = (id, reason) =>
+  postTransition(id, 'cancel', reason ? { reason } : null)
 
-export default apiClient;
+export const payOrder = async (id, { method, reference }) => {
+  const { data } = await api.patch(`/orders/${id}/pay`, { method, reference })
+  return data
+}
+
+export const confirmOrderPayment = async (id, paymentReference) => {
+  const body = paymentReference ? { paymentReference } : null
+  const { data } = await api.post(`/orders/${id}/confirm-payment`, body)
+  return data
+}
+
+// ---- Loyalty ----
+export const fetchMyLoyalty = async () => {
+  const { data } = await api.get('/loyalty/me')
+  return data
+}
+
+export const fetchLoyaltyLedger = async (userId) => {
+  const { data } = await api.get('/loyalty/ledger', { params: { userId } })
+  return data
+}
+
+// ---- Analytics ----
+export const fetchSalesAnalytics = async (params) => {
+  const { data } = await api.get('/analytics/sales', { params })
+  return data
+}
+
+export const fetchPeopleAnalytics = async (params) => {
+  const { data } = await api.get('/analytics/people', { params })
+  return data
+}
+
+export const fetchSalesVsPeople = async (params) => {
+  const { data } = await api.get('/analytics/sales-vs-people', { params })
+  return data
+}
+
+export const exportAnalytics = async (format, params) => {
+  const { data } = await api.get('/analytics/export', {
+    params: { ...params, format },
+    responseType: 'blob',
+  })
+  return data
+}
+
+// ---- Push Notifications ----
+export const registerPushToken = async ({ token, platform }) => {
+  await api.post('/push/register', { token, platform })
+}
+
+export default api

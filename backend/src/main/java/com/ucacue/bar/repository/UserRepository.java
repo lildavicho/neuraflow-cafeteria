@@ -28,7 +28,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Page<UserEntity> findByActiveTrue(Pageable pageable);
     
     @Query("SELECT u FROM UserEntity u WHERE " +
-           "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "(LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "u.identification LIKE CONCAT('%', :search, '%'))")
     Page<UserEntity> searchUsers(@Param("search") String search, Pageable pageable);

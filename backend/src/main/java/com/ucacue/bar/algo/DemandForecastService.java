@@ -1,6 +1,6 @@
 package com.ucacue.bar.algo;
 
-import com.ucacue.bar.repository.SaleRepository;
+import com.ucacue.bar.repository.OrderItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -8,14 +8,13 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class DemandForecastService {
     
-    private final SaleRepository saleRepository;
+    private final OrderItemRepository orderItemRepository;
     private static final double DEFAULT_ALPHA = 0.3; // Smoothing parameter
     
     /**
@@ -46,10 +45,10 @@ public class DemandForecastService {
         double stdDev = calculateStandardDeviation(historicalData);
         List<Double> lowerBound = forecast.stream()
             .map(f -> Math.max(0, f - 1.96 * stdDev))
-            .collect(Collectors.toList());
+            .toList();
         List<Double> upperBound = forecast.stream()
             .map(f -> f + 1.96 * stdDev)
-            .collect(Collectors.toList());
+            .toList();
         
         result.put("forecast", forecast);
         result.put("lowerBound", lowerBound);
@@ -96,45 +95,17 @@ public class DemandForecastService {
     /**
      * Get historical demand data
      */
-    private List<Double> getHistoricalDemand(Long productId, LocalDateTime startDate, 
-                                            LocalDateTime endDate, String period) {
-        List<Double> demands = new ArrayList<>();
-        
-        // Get sales data grouped by period
-        List<Object[]> salesData = saleRepository.findTopSellingProducts(
-            startDate, endDate, 1000
-        );
-        
-        // Filter for specific product and aggregate by period
-        Map<LocalDate, Double> aggregatedData = new HashMap<>();
-        
-        for (Object[] data : salesData) {
-            Long prodId = ((Number) data[1]).longValue();
-            if (prodId.equals(productId)) {
-                Double quantity = ((Number) data[2]).doubleValue();
-                // Simplified - in production, group by actual date
-                LocalDate date = LocalDate.now().minusDays(demands.size());
-                aggregatedData.merge(date, quantity, Double::sum);
-            }
-        }
-        
-        // Convert to list based on period
-        if ("weekly".equalsIgnoreCase(period)) {
-            // Aggregate by week
-            demands = aggregateByWeek(aggregatedData);
-        } else {
-            // Daily data
-            demands = new ArrayList<>(aggregatedData.values());
-        }
-        
-        // Fill missing values with zeros
-        if (demands.isEmpty()) {
-            for (int i = 0; i < 30; i++) {
-                demands.add(0.0);
-            }
-        }
-        
-        return demands;
+    private List<Double> getHistoricalDemand(Long productId, LocalDateTime startDate,
+                                             LocalDateTime endDate, String period) {
+        List<Object[]> salesData = orderItemRepository.aggregateDailyQuantity(productId, startDate, endDate);
+
+        Map<LocalDate, Double> dailyData = aggregateDaily(salesData);
+
+        List<Double> demands = "weekly".equalsIgnoreCase(period)
+            ? aggregateByWeek(dailyData)
+            : new ArrayList<>(dailyData.values());
+
+        return ensureMinLength(demands, 30);
     }
     
     /**
@@ -145,10 +116,41 @@ public class DemandForecastService {
         
         for (Map.Entry<LocalDate, Double> entry : dailyData.entrySet()) {
             int week = entry.getKey().getDayOfYear() / 7;
-            weeklyData.merge(week, entry.getValue(), Double::sum);
+            weeklyData.merge(week, entry.getValue(), (a, b) -> Double.valueOf((a == null ? 0.0 : a) + (b == null ? 0.0 : b)));
         }
         
         return new ArrayList<>(weeklyData.values());
+    }
+
+    /**
+     * Aggregate simplified daily quantities for a product from raw rows
+     */
+    private Map<LocalDate, Double> aggregateDaily(List<Object[]> salesData) {
+        Map<LocalDate, Double> aggregatedData = new TreeMap<>();
+        for (Object[] row : salesData) {
+            LocalDate date = row[0] instanceof java.sql.Date
+                ? ((java.sql.Date) row[0]).toLocalDate()
+                : (row[0] instanceof LocalDate ? (LocalDate) row[0] : LocalDate.now());
+            Double quantity = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
+            aggregatedData.merge(date, quantity,
+                (a, b) -> Double.valueOf((a == null ? 0.0 : a) + (b == null ? 0.0 : b)));
+        }
+        return aggregatedData;
+    }
+
+    /**
+     * Ensure list has at least 'min' elements, padding with zeros if necessary
+     */
+    private List<Double> ensureMinLength(List<Double> values, int min) {
+        if (values == null) {
+            List<Double> zeros = new ArrayList<>(min);
+            for (int i = 0; i < min; i++) zeros.add(0.0);
+            return zeros;
+        }
+        if (values.size() >= min) return values;
+        List<Double> out = new ArrayList<>(values);
+        for (int i = values.size(); i < min; i++) out.add(0.0);
+        return out;
     }
     
     /**
@@ -159,7 +161,10 @@ public class DemandForecastService {
         
         // Simple linear regression
         double n = data.size();
-        double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        double sumX = 0;
+        double sumY = 0;
+        double sumXY = 0;
+        double sumX2 = 0;
         
         for (int i = 0; i < data.size(); i++) {
             sumX += i;
@@ -168,8 +173,11 @@ public class DemandForecastService {
             sumX2 += i * i;
         }
         
-        double slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-        return slope;
+        double denominator = (n * sumX2 - sumX * sumX);
+        if (denominator == 0) {
+            return 0.0;
+        }
+        return (n * sumXY - sumX * sumY) / denominator;
     }
     
     /**

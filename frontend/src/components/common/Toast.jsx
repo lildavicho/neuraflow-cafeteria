@@ -5,7 +5,7 @@ const Toast = ({ toasts, onRemove }) => {
   const toastRefs = useRef([]);
 
   useEffect(() => {
-    toastRefs.current.forEach((toast, index) => {
+    toastRefs.current.forEach((toast) => {
       if (toast) {
         gsap.fromTo(
           toast,

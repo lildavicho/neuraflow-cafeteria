@@ -19,11 +19,31 @@ export const uploadImage = async (file, folder = 'productos') => {
   }
 };
 
+const extractPathFromUrl = (downloadURL) => {
+  try {
+    const url = new URL(downloadURL);
+    const bucket = storage.app.options.storageBucket;
+    const apiPrefix = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/`;
+
+    if (downloadURL.startsWith(apiPrefix)) {
+      return decodeURIComponent(downloadURL.slice(apiPrefix.length).split('?')[0]);
+    }
+
+    if (url.protocol === 'gs:') {
+      return decodeURIComponent(url.pathname.slice(1));
+    }
+  } catch {
+    // Not a valid URL, assume it is already a storage path
+  }
+  return downloadURL;
+};
+
 export const deleteImage = async (imageUrl) => {
   try {
     if (!imageUrl) return;
 
-    const imageRef = ref(storage, imageUrl);
+    const path = extractPathFromUrl(imageUrl);
+    const imageRef = ref(storage, path);
     await deleteObject(imageRef);
   } catch (error) {
     console.error('Error deleting image:', error);

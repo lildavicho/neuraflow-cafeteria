@@ -4,6 +4,8 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,10 @@ import java.io.InputStream;
 
 @Service
 public class FirebaseService {
+
+    private static final Logger log = LoggerFactory.getLogger(FirebaseService.class);
+    private static final String RESOURCES_PREFIX = "src/main/resources/";
+    private static final String CLASSPATH_PREFIX = "classpath:";
 
     // Ruta configurada en application.yml (firebase.service-account-path)
     @Value("${firebase.service-account-path:}")
@@ -41,11 +47,11 @@ public class FirebaseService {
             InputStream serviceAccountStream;
 
             // Normalize common path formats to classpath resource names
-            if (path.startsWith("classpath:")) {
-                String cp = path.substring("classpath:".length());
+            if (path.startsWith(CLASSPATH_PREFIX)) {
+                String cp = path.substring(CLASSPATH_PREFIX.length());
                 serviceAccountStream = new ClassPathResource(cp).getInputStream();
-            } else if (path.contains("src/main/resources/")) {
-                String cp = path.substring(path.indexOf("src/main/resources/") + "src/main/resources/".length());
+            } else if (path.contains(RESOURCES_PREFIX)) {
+                String cp = path.substring(path.indexOf(RESOURCES_PREFIX) + RESOURCES_PREFIX.length());
                 serviceAccountStream = new ClassPathResource(cp).getInputStream();
             } else {
                 ClassPathResource cpr = new ClassPathResource(path);
@@ -68,8 +74,7 @@ public class FirebaseService {
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Error al inicializar Firebase Admin:");
-            e.printStackTrace();
+            log.error("Error al inicializar Firebase Admin", e);
         }
     }
 }

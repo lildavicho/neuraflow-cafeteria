@@ -62,6 +62,18 @@ const RegisterPage = () => {
     e.preventDefault();
     setError('');
 
+    const name = formData.displayName.trim();
+    if (name.length < 2) {
+      setError('Ingresa tu nombre');
+      return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailPattern.test(formData.email.trim())) {
+      setError('Ingresa un correo válido');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
@@ -76,7 +88,7 @@ const RegisterPage = () => {
 
     try {
       await register(formData.email, formData.password, formData.displayName);
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -88,7 +100,7 @@ const RegisterPage = () => {
     <div className="w-full max-w-md">
       {/* Logo animado */}
       <div ref={logoRef} className="w-24 h-24 mx-auto mb-6">
-        <img src={logo} alt="UCACUE Bar Logo" className="w-full h-full drop-shadow-2xl" />
+        <img src={logo} alt="Logo Cafetería" className="w-full h-full drop-shadow-2xl" />
       </div>
 
       {/* Card principal */}
@@ -96,7 +108,7 @@ const RegisterPage = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Crear Cuenta</h1>
-          <p className="text-gray-600 dark:text-gray-400">Únete al sistema UCACUE Bar</p>
+          <p className="text-gray-600 dark:text-gray-400">Únete a Cafetería El Bar de las Águilas Rojas</p>
         </div>
 
         {/* Error message */}
@@ -113,7 +125,7 @@ const RegisterPage = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Nombre Completo */}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <label htmlFor="displayName" className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Nombre Completo
             </label>
             <input
@@ -124,13 +136,14 @@ const RegisterPage = () => {
               required
               placeholder="Juan Pérez"
               className="input-brand"
+              id="displayName"
               autoComplete="name"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <label htmlFor="email" className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Correo Electrónico
             </label>
             <input
@@ -139,15 +152,16 @@ const RegisterPage = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="usuario@ucacue.edu.ec"
+              placeholder="tu@email.com"
               className="input-brand"
+              id="email"
               autoComplete="email"
             />
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <label htmlFor="password" className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Contraseña
             </label>
             <input
@@ -159,6 +173,7 @@ const RegisterPage = () => {
               minLength="6"
               placeholder="Mínimo 6 caracteres"
               className="input-brand"
+              id="password"
               autoComplete="new-password"
             />
             {/* Password strength indicator */}
@@ -172,7 +187,7 @@ const RegisterPage = () => {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Confirmar Contraseña
             </label>
             <input
@@ -183,6 +198,7 @@ const RegisterPage = () => {
               required
               placeholder="Repite tu contraseña"
               className="input-brand"
+              id="confirmPassword"
               autoComplete="new-password"
             />
           </div>
@@ -215,7 +231,7 @@ const RegisterPage = () => {
 
       {/* Footer */}
       <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
-        © 2025 UCACUE Bar. Todos los derechos reservados.
+        © 2025 NeuraFlow. Todos los derechos reservados.
       </p>
     </div>
   );

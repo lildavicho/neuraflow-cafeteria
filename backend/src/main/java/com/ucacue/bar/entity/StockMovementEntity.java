@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "stock_movements", indexes = {
     @Index(name = "idx_stock_movement_product", columnList = "product_id"),
-    @Index(name = "idx_stock_movement_created", columnList = "created")
+    @Index(name = "idx_stock_movement_created_at", columnList = "created_at")
 })
 @Data
 @NoArgsConstructor
@@ -52,8 +52,8 @@ public class StockMovementEntity {
     private Long referenceId;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime created;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     public enum MovementType {
         IN, OUT, ADJUST

@@ -1,5 +1,7 @@
 package com.ucacue.bar.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,7 +18,9 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class CategoryEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,13 +35,14 @@ public class CategoryEntity {
     private Boolean active = true;
 
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<ProductEntity> products = new ArrayList<>();
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime created;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updated;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 }

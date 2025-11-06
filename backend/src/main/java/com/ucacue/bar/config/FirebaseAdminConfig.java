@@ -17,9 +17,16 @@ public class FirebaseAdminConfig {
     @Value("${firebase.service-account-path:}")
     private String serviceAccountPath;
 
+    @Value("${firebase.enabled:true}")
+    private boolean firebaseEnabled;
+
     @PostConstruct
     public void init() {
         try {
+            if (!firebaseEnabled) {
+                log.info("Firebase disabled via configuration");
+                return;
+            }
             if (!FirebaseApp.getApps().isEmpty()) {
                 log.info("FirebaseApp already initialized");
                 return;
@@ -47,6 +54,18 @@ public class FirebaseAdminConfig {
                         log.info("Loaded Firebase credentials from path: {}", serviceAccountPath);
                     }
                 } catch (Exception ignored) {}
+            }
+
+            if (credentials == null && serviceAccountPath != null && !serviceAccountPath.isBlank()) {
+                java.nio.file.Path path = java.nio.file.Paths.get(serviceAccountPath);
+                if (java.nio.file.Files.exists(path)) {
+                    try (InputStream is = java.nio.file.Files.newInputStream(path)) {
+                        credentials = GoogleCredentials.fromStream(is);
+                        log.info("Loaded Firebase credentials from filesystem path: {}", path);
+                    }
+                } else {
+                    log.warn("Firebase service account path does not exist: {}", path);
+                }
             }
 
             // Final fallback: Application Default Credentials (GOOGLE_APPLICATION_CREDENTIALS)

@@ -31,6 +31,11 @@ const ForgotPasswordPage = () => {
     e.preventDefault();
     setError('');
     setSuccess(false);
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailPattern.test(email.trim())) {
+      setError('Ingresa un correo válido');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -48,7 +53,7 @@ const ForgotPasswordPage = () => {
     <div className="w-full max-w-md">
       {/* Logo animado */}
       <div ref={logoRef} className="w-24 h-24 mx-auto mb-6">
-        <img src={logo} alt="UCACUE Bar Logo" className="w-full h-full drop-shadow-2xl" />
+        <img src={logo} alt="Logo Cafetería" className="w-full h-full drop-shadow-2xl" />
       </div>
 
       {/* Card principal */}
@@ -90,7 +95,7 @@ const ForgotPasswordPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="usuario@ucacue.edu.ec"
+              placeholder="tu@email.com"
               className="input-brand"
               autoComplete="email"
             />
@@ -126,7 +131,7 @@ const ForgotPasswordPage = () => {
 
       {/* Footer */}
       <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
-        © 2025 UCACUE Bar. Todos los derechos reservados.
+        © 2025 NeuraFlow. Todos los derechos reservados.
       </p>
     </div>
   );

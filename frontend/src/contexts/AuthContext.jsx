@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { onAuthChanged, getIdToken } from '../services/authService';
-
-const AuthContext = createContext(null);
+import { initNotifications } from '../services/notifications';
+import { AuthContext } from './authContextValue';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -11,11 +11,14 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthChanged(async (firebaseUser) => {
       if (firebaseUser) {
+        const role = firebaseUser.email === 'admin@ucacue.edu.ec' ? 'ADMIN' : 'USER';
+        
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           photoURL: firebaseUser.photoURL,
+          role,
         });
 
         const idToken = await getIdToken();
@@ -24,8 +27,11 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('user', JSON.stringify({
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
+          role,
           timestamp: Date.now(),
         }));
+
+        initNotifications(firebaseUser.uid).catch(console.error);
       } else {
         setUser(null);
         setToken(null);
@@ -45,12 +51,4 @@ export const AuthProvider = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
 };

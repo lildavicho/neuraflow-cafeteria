@@ -1,6 +1,9 @@
 spring:
   application:
     name: ucacue-bar
+  mvc:
+    servlet:
+      path: ${CONTEXT_PATH:/api}
 
   datasource:
     url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:ucacue_erp}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=America/Guayaquil&createDatabaseIfNotExist=true
@@ -15,12 +18,32 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: ${DDL_AUTO:update}
+      ddl-auto: none
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect # ← actualizado, el anterior está deprecado
-        format_sql: true
-    show-sql: ${SHOW_SQL:true}
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: ${SHOW_SQL:false}
+        jdbc:
+          time_zone: UTC
+    show-sql: ${SHOW_SQL:false}
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000
+      repositories:
+        enabled: false
+  cache:
+    type: caffeine
+    cache-names: firebase-tokens, products-public
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=60s
 
   # mail deshabilitado
 
@@ -32,33 +55,28 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
   servlet:
-    context-path: ${CONTEXT_PATH:/api}
+    context-path: /
   error:
     include-message: always
     include-binding-errors: always
 
 security:
   jwt:
-    secret: ${JWT_SECRET:your-256-bit-secret-your-256-bit-secret-key}
+    secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:86400}
     refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800}
 
 firebase:
-  project-id: ${FIREBASE_PROJECT_ID:baru-fe8a3}
-  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:firebase_credentials.json}
-
-algolia:
-  application-id: ${ALGOLIA_APP_ID:ZC1H8MVX05}
-  api-key: ${ALGOLIA_API_KEY:9c0c8a0e2f8f9d8b7c6a5e4d3c2b1a0f}
-  search-api-key: ${ALGOLIA_SEARCH_API_KEY:4dea24d6f6c0f12ac5e8d9b4e2f890c0}
-  index-name: ${ALGOLIA_INDEX_NAME:productos_venta}
+  project-id: ${FIREBASE_PROJECT_ID}
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH}
+  enabled: ${FIREBASE_ENABLED:true}
 
 payment:
   payphone:
-    key: ${PAYPHONE_KEY:}
+    key: ${PAYPHONE_KEY}
     endpoint: ${PAYPHONE_ENDPOINT:https://pay.payphonetodoesposible.com/api}
   datafast:
-    key: ${DATAFAST_KEY:}
+    key: ${DATAFAST_KEY}
     endpoint: ${DATAFAST_ENDPOINT:https://sandbox.datafast.com.ec/api}
 
 webrtc:
@@ -90,4 +108,9 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+app:
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174,http://localhost:8080,http://localhost:8090,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:8080,http://127.0.0.1:8090}
+  loyalty:
+    points-per-dollar: ${LOYALTY_POINTS_PER_DOLLAR:1}
 

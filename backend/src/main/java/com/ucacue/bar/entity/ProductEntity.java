@@ -24,7 +24,7 @@ public class ProductEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
     private CategoryEntity category;
 
@@ -59,13 +59,16 @@ public class ProductEntity {
     @Column(nullable = false, length = 20)
     private ProductStatus status = ProductStatus.AVAILABLE;
 
+    @Column(nullable = false)
+    private Boolean prepared = true;
+
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime created;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updated;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     public enum ProductStatus {
         AVAILABLE, SOLD_OUT, DISCONTINUED

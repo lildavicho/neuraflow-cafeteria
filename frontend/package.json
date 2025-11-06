@@ -1,18 +1,22 @@
 {
-    "name": "ucacue-bar-frontend",
+    "name": "cafeteria-aguilas-rojas-frontend",
     "private": true,
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "vite --port 5174",
+        "dev": "vite --host 0.0.0.0 --port 5173",
         "build": "vite build",
         "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-        "preview": "vite preview --port 5174"
+        "preview": "vite preview --host 0.0.0.0 --port 5173"
     },
     "dependencies": {
+        "@gsap/react": "^2.1.1",
+        "@stomp/stompjs": "^7.0.0",
         "axios": "^1.7.2",
+        "bootstrap-icons": "^1.11.3",
         "chart.js": "^4.5.1",
         "firebase": "^12.4.0",
+        "globalthis": "^1.0.4",
         "gsap": "^3.13.0",
         "qrcode": "^1.5.4",
         "react": "^19.2.0",
@@ -20,6 +24,10 @@
         "react-dom": "^19.2.0",
         "react-hook-form": "^7.52.1",
         "react-router-dom": "^6.30.1",
+        "prop-types": "^15.8.1",
+        "rollup-plugin-node-polyfills": "^0.2.1",
+        "sockjs-client": "^1.6.1",
+        "styled-components": "^6.1.13",
         "xlsx": "^0.18.5"
     },
     "devDependencies": {

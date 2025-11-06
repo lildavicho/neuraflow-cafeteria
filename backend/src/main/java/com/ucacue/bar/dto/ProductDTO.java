@@ -27,8 +27,6 @@ public class ProductDTO {
     
     private String categoryName;
     
-    @NotBlank(message = "El código es obligatorio")
-    @Pattern(regexp = "^[A-Z]{3}[0-9]{3}$", message = "El código debe tener formato XXX000")
     private String code;
     
     @NotBlank(message = "El nombre es obligatorio")
@@ -40,7 +38,6 @@ public class ProductDTO {
     
     private String imageUrl;
     
-    @NotBlank(message = "La unidad es obligatoria")
     private String unit;
     
     @NotNull(message = "El precio es obligatorio")
@@ -51,9 +48,10 @@ public class ProductDTO {
     @DecimalMin(value = "0.00", message = "El precio de compra no puede ser negativo")
     private BigDecimal purchasePrice;
     
-    @NotNull(message = "El stock es obligatorio")
-    @Min(value = 0, message = "El stock no puede ser negativo")
     private Integer stock;
+    
+    // Indica si aparece en POS
+    private Boolean prepared;
     
     @Min(value = 0, message = "El stock mínimo no puede ser negativo")
     @Builder.Default
@@ -61,9 +59,9 @@ public class ProductDTO {
     
     private String status;
     
-    private LocalDateTime created;
+    private LocalDateTime createdAt;
     
-    private LocalDateTime updated;
+    private LocalDateTime updatedAt;
     
     // Computed fields
     private Boolean lowStock;

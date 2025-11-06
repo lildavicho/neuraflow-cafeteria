@@ -1,12 +1,46 @@
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { logout } from '../../services/authService';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import { useWebSocket, useOrderNotifications } from '../../hooks/useWebSocket';
+import { getOrders } from '../../services/orders';
 
 const Navbar = ({ onMenuClick }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const { status } = useWebSocket();
+
+  const loadNotificationCount = useCallback(async () => {
+    if (!user) return;
+    try {
+      const page = await getOrders({ page: 0, size: 50 });
+      const list = Array.isArray(page?.content) ? page.content : (Array.isArray(page) ? page : []);
+      if (user.role === 'ADMIN') {
+        // Backend statuses: PENDING, ACCEPTED, READY, DELIVERED, CANCELLED
+        const pending = list.filter((o) => o.status === 'PENDING').length;
+        setNotificationCount(pending);
+      } else {
+        const ready = list.filter((o) => o.status === 'READY').length;
+        setNotificationCount(ready);
+      }
+    } catch (err) {
+      console.error('Error loading notification count:', err);
+      setNotificationCount(0);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadNotificationCount();
+  }, [loadNotificationCount]);
+
+  const handleOrderNotification = useCallback(() => {
+    loadNotificationCount();
+  }, [loadNotificationCount]);
+
+  useOrderNotifications(handleOrderNotification);
 
   const handleLogout = async () => {
     try {
@@ -32,23 +66,45 @@ const Navbar = ({ onMenuClick }) => {
 
           <div className="flex-1 max-w-md mx-4 hidden md:block">
             <div className="relative">
+              <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
               <input
                 type="text"
                 placeholder="Buscar..."
-                className="input-brand"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand/40 transition-all"
               />
-              <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors relative focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
-              <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full animate-pulse"></span>
+            {status === 'connected' && (
+              <span className="flex items-center gap-1 text-sm text-success-600 dark:text-success-400" title="Conectado">
+                <i className="bi bi-wifi"></i>
+              </span>
+            )}
+            {status === 'reconnecting' && (
+              <span className="flex items-center gap-1 text-sm text-warning-600 dark:text-warning-400" title="Reconectando">
+                <i className="bi bi-arrow-repeat animate-spin"></i>
+              </span>
+            )}
+            {status === 'disconnected' && (
+              <span className="flex items-center gap-1 text-sm text-danger-600 dark:text-danger-400" title="Desconectado">
+                <i className="bi bi-wifi-off"></i>
+              </span>
+            )}
+            
+            <button 
+              onClick={() => {
+                navigate('/notificaciones');
+                setNotificationCount(0);
+              }}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors relative focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              <i className="bi bi-bell text-xl text-gray-600 dark:text-gray-400"></i>
+              {notificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {notificationCount > 9 ? '9+' : notificationCount}
+                </span>
+              )}
             </button>
 
             <div className="relative">
@@ -117,3 +173,7 @@ const Navbar = ({ onMenuClick }) => {
 };
 
 export default Navbar;
+
+Navbar.propTypes = {
+  onMenuClick: PropTypes.func,
+};

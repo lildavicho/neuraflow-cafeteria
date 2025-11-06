@@ -4,18 +4,19 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn -q -DskipTests package
 
 # Runtime stage
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+RUN apk add --no-cache wget
 
 # Create non-root user
 RUN addgroup -g 1001 -S appuser && \
     adduser -u 1001 -S appuser -G appuser
 
 # Copy jar from builder
-COPY --from=builder /app/target/*.jar app.jar
+COPY --from=builder /app/target/*-SNAPSHOT.jar app.jar
 
 # Create directories for logs and uploads
 RUN mkdir -p /app/logs /app/uploads && \
@@ -31,8 +32,8 @@ ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.securit
 EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:8080/api/actuator/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://127.0.0.1:8080/api/actuator/health || exit 1
 
 # Run application
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

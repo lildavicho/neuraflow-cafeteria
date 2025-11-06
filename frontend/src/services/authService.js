@@ -33,7 +33,7 @@ export const register = async (email, password, displayName) => {
         email,
         displayName,
         createdAt: serverTimestamp(),
-        role: 'COMPRADOR',
+        role: 'BUYER',
       },
       { merge: true }
     )
@@ -81,7 +81,7 @@ export const loginWithGoogle = async () => {
         displayName: user.displayName,
         photoURL: user.photoURL || null,
         createdAt: serverTimestamp(),
-        role: 'COMPRADOR',
+        role: 'BUYER',
       },
       { merge: true }
     )
@@ -99,7 +99,12 @@ export const loginWithMicrosoft = async () => {
     provider.addScope('email');
     provider.addScope('profile');
     provider.addScope('openid');
-    provider.setCustomParameters({ prompt: 'select_account' });
+    const params = { prompt: 'select_account' };
+    const tenant = import.meta.env.VITE_MS_TENANT?.trim();
+    if (tenant) params.tenant = tenant;
+    const domainHint = import.meta.env.VITE_MS_DOMAIN_HINT?.trim();
+    if (domainHint) params.domain_hint = domainHint;
+    provider.setCustomParameters(params);
 
     const { user } = await signInWithPopup(auth, provider);
 
@@ -110,7 +115,7 @@ export const loginWithMicrosoft = async () => {
         displayName: user.displayName,
         photoURL: user.photoURL || null,
         createdAt: serverTimestamp(),
-        role: 'COMPRADOR',
+        role: 'BUYER',
       },
       { merge: true }
     );

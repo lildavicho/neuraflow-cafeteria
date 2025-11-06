@@ -32,6 +32,11 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailPattern.test(email.trim())) {
+      setError('Ingresa un correo válido');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -41,7 +46,7 @@ const LoginPage = () => {
         localStorage.setItem('rememberMe', 'true');
       }
       
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -53,7 +58,7 @@ const LoginPage = () => {
     try {
       setError('');
       await loginWithGoogle();
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       setError(err.message);
     }
@@ -63,7 +68,7 @@ const LoginPage = () => {
     try {
       setError('');
       await loginWithMicrosoft();
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       setError(err.message);
     }
@@ -73,15 +78,15 @@ const LoginPage = () => {
     <div className="w-full max-w-md">
       {/* Logo animado */}
       <div ref={logoRef} className="w-24 h-24 mx-auto mb-6">
-        <img src={logo} alt="UCACUE Bar Logo" className="w-full h-full drop-shadow-2xl" />
+        <img src={logo} alt="Logo Cafetería" className="w-full h-full drop-shadow-2xl" />
       </div>
 
       {/* Card principal */}
       <div ref={cardRef} className="card-brand">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">UCACUE Bar</h1>
-          <p className="text-gray-600 dark:text-gray-400">Sistema de Gestión y Punto de Venta</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Cafetería</h1>
+          <h2 className="text-base font-medium text-gray-600 dark:text-gray-400">El Bar de las Águilas Rojas</h2>
         </div>
 
         {/* Error message */}
@@ -98,7 +103,7 @@ const LoginPage = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email */}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <label htmlFor="email" className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Correo Electrónico
             </label>
             <input
@@ -106,15 +111,16 @@ const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="usuario@ucacue.edu.ec"
+              placeholder="tu@email.com"
               className="input-brand"
               autoComplete="email"
+              id="email"
             />
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <label htmlFor="password" className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Contraseña
             </label>
             <input
@@ -125,6 +131,7 @@ const LoginPage = () => {
               placeholder="••••••••"
               className="input-brand"
               autoComplete="current-password"
+              id="password"
             />
           </div>
 
@@ -216,7 +223,7 @@ const LoginPage = () => {
 
       {/* Footer */}
       <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
-        © 2025 UCACUE Bar. Todos los derechos reservados.
+        © 2025 NeuraFlow. Todos los derechos reservados.
       </p>
     </div>
   );

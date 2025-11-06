@@ -1,18 +1,13 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import PropTypes from 'prop-types';
+import { useAuth } from '../../hooks/useAuth';
+import Loader from '../common/Loader';
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400 font-medium">Cargando...</p>
-        </div>
-      </div>
-    );
+    return <Loader />;
   }
 
   if (!isAuthenticated) {
@@ -20,6 +15,10 @@ const PrivateRoute = ({ children }) => {
   }
 
   return children;
+};
+
+PrivateRoute.propTypes = {
+  children: PropTypes.node.isRequired
 };
 
 export default PrivateRoute;

@@ -89,3 +89,23 @@ a {
 a:hover {
   color: var(--uc-brand-600);
 }
+
+.card-brand {
+  background: var(--uc-surface);
+  border: 1px solid var(--uc-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 18px 35px -22px rgba(15, 23, 42, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark .card-brand {
+  background: var(--uc-surface-elevated);
+  border-color: var(--uc-border);
+  box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.6);
+}
+
+.card-brand:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 45px -24px rgba(var(--uc-brand-rgb), 0.35);
+}

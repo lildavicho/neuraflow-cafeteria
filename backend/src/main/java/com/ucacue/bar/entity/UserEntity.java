@@ -11,8 +11,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users", indexes = {
-    @Index(name = "idx_user_email", columnList = "email"),
-    @Index(name = "idx_user_identification", columnList = "identification")
+    @Index(name = "idx_users_email", columnList = "email", unique = true),
+    @Index(name = "idx_users_firebase_uid", columnList = "firebase_uid"),
+    @Index(name = "idx_users_created_at", columnList = "created_at")
 })
 @Data
 @NoArgsConstructor
@@ -22,19 +23,19 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String fullName;
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, unique = true, length = 120)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash")
     private String passwordHash;
 
     @Column(length = 15)
     private String phone;
 
-    @Column(length = 10, unique = true)
+    @Column(length = 20, unique = true)
     private String identification;
 
     @Enumerated(EnumType.STRING)
@@ -54,14 +55,14 @@ public class UserEntity {
     private String avatarUrl;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime created;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updated;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     public enum UserRole {
-        ADMIN, COMPRADOR
+        ADMIN, BUYER
     }
 }

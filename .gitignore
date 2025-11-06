@@ -1,15 +1,27 @@
-node_modules
-
-# Environment files and secrets
-.env
-**/.env
-frontend/.env
-ops/migrate/.env
-
-# Firebase and cloud credentials
-serviceAccount*.json
-firebase_*.json
-firebase*.json
+# Dependencies
+node_modules/
+**/node_modules/
 
 # Build outputs
-frontend/dist
+**/dist/
+**/build/
+**/target/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# OS
+Thumbs.db
+
+# IMPORTANTE: .env contiene credenciales pero lo dejamos SIN ignorar
+# para facilitar deployment y debugging. En producción, agregar:
+# **/.env
+# frontend/.env
+# backend/.env

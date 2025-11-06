@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public interface StockMovementRepository extends JpaRepository<StockMovementEntity, Long> {
     Page<StockMovementEntity> findByProductId(Long productId, Pageable pageable);
     
-    Page<StockMovementEntity> findByCreatedBetween(LocalDateTime startDate, 
-                                                   LocalDateTime endDate, 
-                                                   Pageable pageable);
+    Page<StockMovementEntity> findByCreatedAtBetween(LocalDateTime startDate,
+                                                    LocalDateTime endDate,
+                                                    Pageable pageable);
 }

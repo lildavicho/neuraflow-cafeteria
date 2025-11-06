@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import PrivateRoute from './components/layout/PrivateRoute';
+import AdminRoute from './components/layout/AdminRoute';
+import RoleRedirect from './components/layout/RoleRedirect';
 import Layout from './components/layout/Layout';
 import AuthLayout from './components/layout/AuthLayout';
 import LoginPage from './pages/LoginPage';
@@ -16,9 +20,11 @@ import AjustesPage from './pages/AjustesPage';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -26,20 +32,22 @@ function App() {
           </Route>
 
           <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/inventario" element={<InventarioPage />} />
+            <Route path="/dashboard" element={<AdminRoute><DashboardPage /></AdminRoute>} />
+            <Route path="/inventario" element={<AdminRoute><InventarioPage /></AdminRoute>} />
+            <Route path="/reportes" element={<AdminRoute><ReportesPage /></AdminRoute>} />
             <Route path="/pos" element={<POSPage />} />
-            <Route path="/reportes" element={<ReportesPage />} />
             <Route path="/perfil" element={<PerfilPage />} />
             <Route path="/notificaciones" element={<NotificacionesPage />} />
             <Route path="/ajustes" element={<AjustesPage />} />
           </Route>
 
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+          <Route path="/" element={<RoleRedirect />} />
+          <Route path="*" element={<RoleRedirect />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 

@@ -11,12 +11,13 @@ const QRCode = require("qrcode");
 // ----------------------------------------------------------
 admin.initializeApp({
   credential: admin.credential.applicationDefault(),
-  storageBucket: "baru-fe8a3.firebasestorage.app"
+  storageBucket: `${process.env.GCLOUD_PROJECT}.appspot.com`
 });
 
 setGlobalOptions({ maxInstances: 10 });
 
 const bucket = admin.storage().bucket();
+const rateMap = new Map();
 
 // ----------------------------------------------------------
 // 🚀 FUNCIÓN HTTP PARA GENERAR Y SUBIR UN QR
@@ -24,14 +25,32 @@ const bucket = admin.storage().bucket();
 exports.generateQR = onRequest({ region: "us-central1" }, async (req, res) => {
   try {
     if (req.method !== "POST") {
-      res.status(405).json({ error: "Método no permitido. Usa POST." });
-      return;
+      return res.status(405).json({ error: "Método no permitido. Usa POST." });
     }
+
+    const authHeader = req.get("authorization") || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Token requerido" });
+    }
+    const token = authHeader.substring(7);
+    const decoded = await admin.auth().verifyIdToken(token);
+    const uid = decoded.uid;
+
+    const now = Date.now();
+    const entry = rateMap.get(uid) || { count: 0, resetAt: now };
+    if (now - entry.resetAt > 60000) {
+      entry.count = 0;
+      entry.resetAt = now;
+    }
+    if (entry.count >= 10) {
+      return res.status(429).json({ error: "Rate limit alcanzado. Intenta en un minuto." });
+    }
+    entry.count += 1;
+    rateMap.set(uid, entry);
 
     const { text } = req.body || {};
     if (!text || String(text).trim() === "") {
-      res.status(400).json({ error: "Se requiere un texto para generar el QR." });
-      return;
+      return res.status(400).json({ error: "Se requiere un texto para generar el QR." });
     }
 
     // Generar el QR
@@ -62,7 +81,6 @@ exports.generateQR = onRequest({ region: "us-central1" }, async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor." });
   }
 });
-
 
 
 

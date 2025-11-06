@@ -24,23 +24,24 @@ public class ProductController {
     private final ProductService productService;
     
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BUYER')")
     @Operation(summary = "Get all products with pagination")
     public ResponseEntity<Page<ProductDTO>> getAllProducts(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean prepared,
             Pageable pageable) {
-        return ResponseEntity.ok(productService.getAllProducts(search, categoryId, pageable));
+        return ResponseEntity.ok(productService.getAllProducts(search, categoryId, prepared, pageable));
     }
     
     @GetMapping("/public")
     @Operation(summary = "Get public product list for POS")
-    public ResponseEntity<List<ProductDTO>> getPublicProducts() {
-        return ResponseEntity.ok(productService.getPublicProducts());
+    public ResponseEntity<List<ProductDTO>> getPublicProducts(Pageable pageable) {
+        return ResponseEntity.ok(productService.getPublicProducts(pageable));
     }
     
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPRADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BUYER')")
     @Operation(summary = "Get product by ID")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));

@@ -21,6 +21,8 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     Page<ProductEntity> findByStatus(ProductStatus status, Pageable pageable);
     
     Page<ProductEntity> findByCategoryId(Long categoryId, Pageable pageable);
+    Page<ProductEntity> findByPrepared(Boolean prepared, Pageable pageable);
+    Page<ProductEntity> findByCategoryIdAndPrepared(Long categoryId, Boolean prepared, Pageable pageable);
     
     @Query("SELECT p FROM ProductEntity p WHERE p.stock <= p.minStock AND p.status = 'AVAILABLE'")
     List<ProductEntity> findLowStockProducts();
@@ -30,6 +32,15 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
            "LOWER(p.code) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<ProductEntity> searchProducts(@Param("search") String search, Pageable pageable);
+
+    @Query("SELECT p FROM ProductEntity p WHERE " +
+           "(LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(p.code) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+           "(:prepared IS NULL OR p.prepared = :prepared)")
+    Page<ProductEntity> searchProductsWithPrepared(@Param("search") String search,
+                                                   @Param("prepared") Boolean prepared,
+                                                   Pageable pageable);
     
     @Query("SELECT p FROM ProductEntity p WHERE p.status = 'AVAILABLE' AND p.stock > 0")
     List<ProductEntity> findAvailableProducts();

@@ -38,10 +38,10 @@ public class CameraEntity {
     private String streamPath;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime created;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updated;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 }

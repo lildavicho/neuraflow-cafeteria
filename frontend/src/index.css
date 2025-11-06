@@ -1,72 +1,249 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* stylelint-disable at-rule-no-unknown */
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 @layer base {
+  :root {
+    --bg: #f9fafb;
+    --panel: #ffffff;
+    --card: #ffffff;
+    --muted: #6b7280;
+    --accent: #e11d2e;
+    --ok: #16a34a;
+    --warn: #facc15;
+    --info: #38bdf8;
+  }
+
+  .dark {
+    --bg: #0f1115;
+    --panel: #151922;
+    --card: #1b2130;
+    --muted: #9aa4b2;
+    --accent: #e11d2e;
+    --ok: #16a34a;
+    --warn: #facc15;
+    --info: #38bdf8;
+  }
+
   html, body {
-    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 antialiased;
+    background-color: #ffffff;
+    color: #111827;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .dark html, .dark body {
+    background-color: #0f1115;
+    color: #f9fafb;
   }
 }
 
 @layer components {
   /* === BUTTONS === */
   .btn-brand {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand text-white font-semibold rounded-lg shadow-md;
-    @apply hover:bg-brand-600 hover:shadow-lg hover:-translate-y-0.5 active:bg-brand-700 active:translate-y-0;
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand disabled:hover:translate-y-0;
-    @apply transition-all duration-200;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: all 200ms ease;
+  }
+  .btn-brand:hover {
+    filter: brightness(0.95);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  }
+  .btn-brand:active {
+    transform: translateY(0);
+  }
+  .btn-brand:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(225,29,46,0.4), 0 0 0 4px rgba(255,255,255,0.6);
+  }
+  .btn-brand:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-transparent text-brand font-semibold rounded-lg border-2 border-brand;
-    @apply hover:bg-brand hover:text-white hover:-translate-y-0.5 active:bg-brand-700 active:translate-y-0;
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
-    @apply transition-all duration-200;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: transparent;
+    color: var(--accent);
+    font-weight: 600;
+    border-radius: 0.5rem;
+    border: 2px solid var(--accent);
+    transition: all 200ms ease;
+  }
+  .btn-outline:hover {
+    background-color: var(--accent);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+  .btn-outline:active {
+    transform: translateY(0);
+  }
+  .btn-outline:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(225,29,46,0.4), 0 0 0 4px rgba(255,255,255,0.6);
+  }
+  .btn-outline:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-semibold rounded-lg;
-    @apply hover:bg-gray-300 dark:hover:bg-gray-600 hover:-translate-y-0.5 active:bg-gray-400 dark:active:bg-gray-500 active:translate-y-0;
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400/40;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
-    @apply transition-all duration-200;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background-color: #e5e7eb;
+    color: #111827;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: all 200ms ease;
+  }
+  .dark .btn-secondary {
+    background-color: #374151;
+    color: #f9fafb;
+  }
+  .btn-secondary:hover {
+    filter: brightness(0.96);
+    transform: translateY(-2px);
+  }
+  .btn-secondary:active {
+    transform: translateY(0);
+  }
+  .btn-secondary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(156,163,175,0.4);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 
   /* === LINKS === */
   .link-brand {
-    @apply text-brand hover:text-brand-600 dark:hover:text-brand-400 underline-offset-2 hover:underline;
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 rounded;
-    @apply transition-colors duration-200;
+    color: var(--accent);
+    text-underline-offset: 2px;
+    border-radius: 0.25rem;
+    transition: color 200ms ease;
+  }
+  .link-brand:hover {
+    color: #b3121f;
+    text-decoration: underline;
+  }
+  .link-brand:focus-visible {
+    outline: 2px solid rgba(225,29,46,0.4);
+    outline-offset: 2px;
   }
 
   /* === INPUTS === */
   .input-brand {
-    @apply w-full px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
-    @apply border-2 border-gray-300 dark:border-gray-600 rounded-lg;
-    @apply focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand dark:focus:border-brand;
-    @apply placeholder:text-gray-400 dark:placeholder:text-gray-500;
-    @apply disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed;
-    @apply transition-all duration-200;
+    width: 100%;
+    padding: 0.625rem 1rem;
+    background-color: #fff;
+    color: #111827;
+    border: 2px solid #d1d5db;
+    border-radius: 0.5rem;
+    transition: all 200ms ease;
+  }
+  .dark .input-brand {
+    background-color: #1f2937;
+    color: #f9fafb;
+    border-color: #4b5563;
+  }
+  .input-brand::placeholder {
+    color: #9ca3af;
+  }
+  .dark .input-brand::placeholder {
+    color: #6b7280;
+  }
+  .input-brand:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(225,29,46,0.3);
+    border-color: var(--accent);
+  }
+  .input-brand:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+  }
+  .dark .input-brand:disabled {
+    background-color: #111827;
   }
 
   /* === CARDS === */
   .card-brand {
-    @apply bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6;
-    @apply hover:shadow-lg transition-shadow duration-200;
+    background-color: var(--panel);
+    color: inherit;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: box-shadow 200ms ease;
+  }
+  .dark .card-brand {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+  .card-brand:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   }
 
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700;
+    background-color: var(--panel);
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .dark .card {
+    background-color: #1f2937;
+    border-color: #374151;
   }
 
   .kpi {
-    @apply bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between;
+    background-color: var(--panel);
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .dark .kpi {
+    background-color: #1f2937;
+    border-color: #374151;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background-color: #f3f4f6;
+    color: #374151;
+  }
+  .dark .chip {
+    background-color: #374151;
+    color: #e5e7eb;
   }
 }
 

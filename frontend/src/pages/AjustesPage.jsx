@@ -1,215 +1,181 @@
-import { useState, useEffect } from 'react';
-import { useToast } from '../hooks/useToast';
-import Button from '../components/common/Button';
-import Toast from '../components/common/Toast';
+import { useEffect, useState } from 'react'
+import { getToken } from 'firebase/messaging'
+import { useToast } from '../hooks/useToast'
+import Button from '../components/common/Button'
+import Toast from '../components/common/Toast'
+import { useTheme } from '../hooks/useTheme'
+import { useLanguage } from '../hooks/useLanguage'
+import { firebaseConfig, getMessagingInstance } from '../services/firebase'
+import { registerPushToken } from '../services/apiService'
+
+const registerFirebaseServiceWorker = async () => {
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Service Workers no soportados')
+  }
+
+  const encodedConfig = encodeURIComponent(btoa(JSON.stringify(firebaseConfig)))
+  const swUrl = `/firebase-messaging-sw.js?config=${encodedConfig}`
+  const registration = await navigator.serviceWorker.register(swUrl)
+
+  const sendInitMessage = (reg) => {
+    const worker = reg.active ?? reg.waiting ?? reg.installing
+    worker?.postMessage({
+      type: 'firebase-init',
+      config: firebaseConfig,
+    })
+  }
+
+  sendInitMessage(registration)
+  const readyRegistration = await navigator.serviceWorker.ready
+  sendInitMessage(readyRegistration)
+
+  return readyRegistration
+}
 
 const AjustesPage = () => {
-  const [settings, setSettings] = useState({
-    darkMode: false,
-    notifications: true,
-    soundEffects: true,
-    autoBackup: true,
-    language: 'es',
-  });
-  
-  const { toasts, success, removeToast } = useToast();
+  const { theme, setTheme, toggleTheme } = useTheme()
+  const { language, setLanguage, t } = useLanguage()
+  const { toasts, success, error, removeToast } = useToast()
+  const [pushEnabled, setPushEnabled] = useState(() => localStorage.getItem('cafeteria-push') === 'true')
+  const [processingPush, setProcessingPush] = useState(false)
 
   useEffect(() => {
-    const savedSettings = localStorage.getItem('settings');
-    if (savedSettings) {
-      try {
-        setSettings(JSON.parse(savedSettings));
-      } catch (e) {
-        console.error('Error loading settings:', e);
+    localStorage.setItem('cafeteria-lang', language)
+  }, [language])
+
+  const requestPushPermission = async () => {
+    if (!('Notification' in globalThis)) {
+      throw new Error('Las notificaciones no son compatibles con este navegador')
+    }
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') {
+      throw new Error('Permiso de notificaciones denegado')
+    }
+    const messagingInstance = await getMessagingInstance()
+    if (!messagingInstance) {
+      throw new Error('Firebase Messaging no está disponible')
+    }
+
+    const swRegistration = await registerFirebaseServiceWorker()
+    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY
+    if (!vapidKey) {
+      throw new Error('Falta VITE_FIREBASE_VAPID_KEY en el entorno')
+    }
+    const token = await getToken(messagingInstance, {
+      vapidKey,
+      serviceWorkerRegistration: swRegistration,
+    })
+    if (!token) {
+      throw new Error('No se pudo obtener el token de notificaciones')
+    }
+    await registerPushToken({ token, platform: 'web' })
+    localStorage.setItem('cafeteria-push', 'true')
+    setPushEnabled(true)
+    success('Notificaciones push activadas')
+  }
+
+  const disablePush = async () => {
+    localStorage.removeItem('cafeteria-push')
+    setPushEnabled(false)
+    success('Notificaciones push desactivadas')
+  }
+
+  const handlePushToggle = async () => {
+    try {
+      setProcessingPush(true)
+      if (pushEnabled) {
+        await disablePush()
+      } else {
+        await requestPushPermission()
       }
+    } catch (err) {
+      console.error(err)
+      error(err.message || 'No se pudo actualizar la configuración de push')
+    } finally {
+      setProcessingPush(false)
     }
-  }, []);
+  }
 
-  useEffect(() => {
-    if (settings.darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [settings.darkMode]);
-
-  const handleToggle = (key) => {
-    setSettings(prev => {
-      const newSettings = { ...prev, [key]: !prev[key] };
-      localStorage.setItem('settings', JSON.stringify(newSettings));
-      return newSettings;
-    });
-    success('Configuración actualizada');
-  };
-
-  const handleLanguageChange = (e) => {
-    const newSettings = { ...settings, language: e.target.value };
-    setSettings(newSettings);
-    localStorage.setItem('settings', JSON.stringify(newSettings));
-    success('Idioma actualizado');
-  };
+  const handleLanguageChange = (evt) => {
+    setLanguage(evt.target.value)
+    success('Idioma actualizado')
+  }
 
   const resetSettings = () => {
-    if (!confirm('¿Estás seguro de restablecer todas las configuraciones?')) return;
-    
-    const defaultSettings = {
-      darkMode: false,
-      notifications: true,
-      soundEffects: true,
-      autoBackup: true,
-      language: 'es',
-    };
-    setSettings(defaultSettings);
-    localStorage.setItem('settings', JSON.stringify(defaultSettings));
-    success('Configuraciones restablecidas');
-  };
+    setTheme('light')
+    setLanguage('es')
+    disablePush()
+    success('Configuraciones restablecidas')
+  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <Toast toasts={toasts} onRemove={removeToast} />
 
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Ajustes</h1>
-        <p className="text-gray-600">Personaliza tu experiencia en el sistema</p>
-      </div>
+      <header>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-gray-50">{t('settings')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">Personaliza tu experiencia de trabajo</p>
+      </header>
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Apariencia</h2>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-gray-900">Modo Oscuro</h3>
-              <p className="text-sm text-gray-600">Activa el tema oscuro para reducir la fatiga visual</p>
-            </div>
-            <button
-              onClick={() => handleToggle('darkMode')}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                settings.darkMode ? 'bg-brand' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  settings.darkMode ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
+      <section className="card-brand">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('theme')}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{theme === 'dark' ? t('dark') : t('light')}</p>
           </div>
+          <button
+            onClick={toggleTheme}
+            className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${theme === 'dark' ? 'bg-brand' : 'bg-gray-300'}`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`}
+            />
+          </button>
+        </div>
+      </section>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-gray-900">Idioma</h3>
-              <p className="text-sm text-gray-600">Selecciona el idioma de la interfaz</p>
-            </div>
-            <select
-              value={settings.language}
-              onChange={handleLanguageChange}
-              className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
-            >
-              <option value="es">Español</option>
-              <option value="en">English</option>
-            </select>
+      <section className="card-brand space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('language')}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{language === 'es' ? t('spanish') : t('english')}</p>
           </div>
+          <select
+            value={language}
+            onChange={handleLanguageChange}
+            className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand"
+          >
+            <option value="es">{t('spanish')}</option>
+            <option value="en">{t('english')}</option>
+          </select>
         </div>
-      </div>
+      </section>
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Notificaciones</h2>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-gray-900">Notificaciones Push</h3>
-              <p className="text-sm text-gray-600">Recibe alertas sobre ventas y eventos importantes</p>
-            </div>
-            <button
-              onClick={() => handleToggle('notifications')}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                settings.notifications ? 'bg-brand' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  settings.notifications ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
+      <section className="card-brand space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('enablePush')}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Recibe alertas de pedidos y ventas desde cualquier pestaña</p>
           </div>
+          <button
+            onClick={handlePushToggle}
+            disabled={processingPush}
+            className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${pushEnabled ? 'bg-success-500' : 'bg-gray-300'} ${processingPush ? 'opacity-60 cursor-not-allowed' : ''}`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${pushEnabled ? 'translate-x-6' : 'translate-x-1'}`}
+            />
+          </button>
+        </div>
+      </section>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-gray-900">Efectos de Sonido</h3>
-              <p className="text-sm text-gray-600">Reproduce sonidos al completar acciones</p>
-            </div>
-            <button
-              onClick={() => handleToggle('soundEffects')}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                settings.soundEffects ? 'bg-brand' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  settings.soundEffects ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Sistema</h2>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-gray-900">Respaldo Automático</h3>
-              <p className="text-sm text-gray-600">Guarda automáticamente los datos en la nube</p>
-            </div>
-            <button
-              onClick={() => handleToggle('autoBackup')}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                settings.autoBackup ? 'bg-brand' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  settings.autoBackup ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Información del Sistema</h2>
-        <div className="space-y-3">
-          <div className="flex justify-between py-3 border-b border-gray-200">
-            <span className="text-gray-600">Versión</span>
-            <span className="font-semibold text-gray-900">1.0.0</span>
-          </div>
-          <div className="flex justify-between py-3 border-b border-gray-200">
-            <span className="text-gray-600">Última actualización</span>
-            <span className="font-semibold text-gray-900">{new Date().toLocaleDateString()}</span>
-          </div>
-          <div className="flex justify-between py-3">
-            <span className="text-gray-600">Entorno</span>
-            <span className="font-semibold text-gray-900">Producción</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-4">
-        <Button onClick={resetSettings} variant="danger">
-          Restablecer Configuraciones
+      <footer className="flex items-center justify-end gap-3">
+        <Button variant="secondary" onClick={resetSettings}>
+          Restablecer
         </Button>
-      </div>
+      </footer>
     </div>
-  );
-};
+  )
+}
 
-export default AjustesPage;
+export default AjustesPage

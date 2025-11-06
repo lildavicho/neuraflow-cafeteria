@@ -33,7 +33,7 @@ public class DevDataLoader implements CommandLineRunner {
             u -> {},
             () -> {
                 UserEntity admin = new UserEntity();
-                admin.setFullName("Admin Local");
+                admin.setName("Admin Local");
                 admin.setEmail(email);
                 admin.setPasswordHash(passwordEncoder.encode(adminPassword));
                 admin.setPhone("0000000000");
