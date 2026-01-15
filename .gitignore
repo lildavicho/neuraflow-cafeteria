@@ -1,115 +1,15 @@
-# ====================================
-# UCACUE Bar - Git Ignore
-# ====================================
-
-# --- Build Outputs ---
+# Build
 /target/
 /build/
 /dist/
-/out/
-*.jar
-*.war
-*.class
-
-# --- Dependencies ---
 /node_modules/
-/.pnp/
-.pnp.js
+/out/
 
-# --- Environment Files ---
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.env
-!.env.example
-
-# --- IDE and Editors ---
+# IDE
 /.idea/
 /.vscode/
-*.iml
-*.ipr
-*.iws
-.project
-.classpath
-.settings/
-*.sublime-workspace
-*.sublime-project
-*.swp
-*.swo
-*~
 
-# --- Logs ---
+# Logs y configuraciones temporales
 *.log
-logs/
-/app/logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# --- Operating System ---
+*.env
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
-
-# --- Maven ---
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-dependency-reduced-pom.xml
-buildNumber.properties
-.mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
-
-# --- npm ---
-.npm
-.eslintcache
-.node_repl_history
-
-# --- Testing ---
-/coverage/
-*.lcov
-.nyc_output/
-
-# --- Secrets and Credentials ---
-*.pem
-*.key
-*.crt
-*.p12
-*.jks
-serviceAccount.json
-firebase-adminsdk*.json
-/secrets/
-
-# --- Docker ---
-.docker/
-docker-compose.override.yml
-
-# --- Uploads and Generated Files ---
-/uploads/
-/app/uploads/
-*.tmp
-*.temp
-*.bak
-
-# --- Database ---
-*.sql.backup
-*.dump
-
-# --- Cache ---
-.cache/
-.parcel-cache/
-.turbo/
-
-# --- Audit and Reports ---
-/audit-report*.md
-/.audit/

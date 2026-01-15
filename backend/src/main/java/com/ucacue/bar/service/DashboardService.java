@@ -1,11 +1,10 @@
 package com.ucacue.bar.service;
 
+import com.ucacue.bar.entity.OrderEntity;
 import com.ucacue.bar.entity.PeopleCountEntity;
-import com.ucacue.bar.entity.SaleEntity;
 import com.ucacue.bar.repository.OrderRepository;
 import com.ucacue.bar.repository.PeopleCountRepository;
 import com.ucacue.bar.repository.ProductRepository;
-import com.ucacue.bar.repository.SaleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -26,10 +25,9 @@ import java.util.TreeMap;
 @Slf4j
 public class DashboardService {
 
-    private final OrderRepository orderRepository; // kept for compatibility if needed elsewhere
+    private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final PeopleCountRepository peopleCountRepository;
-    private final SaleRepository saleRepository;
     private final RealtimeGateway realtimeGateway;
 
     public Map<String, Object> snapshot() {
@@ -37,8 +35,8 @@ public class DashboardService {
         LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
         LocalDateTime last24h = now.minusHours(24);
 
-        BigDecimal ventasHoy = defaultBigDecimal(saleRepository.sumTotalByPaidAtBetween(startOfDay, now));
-        long ordenesHoy = saleRepository.countByPaidAtBetween(startOfDay, now);
+        BigDecimal ventasHoy = defaultBigDecimal(orderRepository.totalDeliveredBetween(startOfDay, now));
+        long ordenesHoy = orderRepository.deliveredCountBetween(startOfDay, now);
         BigDecimal ticketPromedio = ordenesHoy > 0
             ? ventasHoy.divide(BigDecimal.valueOf(ordenesHoy), 2, RoundingMode.HALF_UP)
             : BigDecimal.ZERO;
@@ -71,12 +69,13 @@ public class DashboardService {
 
     private List<Map<String, Object>> buildSalesSeries(LocalDateTime from, LocalDateTime to) {
         Map<LocalDateTime, BigDecimal> buckets = new TreeMap<>();
-        List<SaleEntity> sales = saleRepository.findByPaidAtBetween(from, to);
-        for (SaleEntity sale : sales) {
-            if (sale.getPaidAt() == null) continue;
-            LocalDateTime bucket = sale.getPaidAt().truncatedTo(ChronoUnit.HOURS);
-            buckets.merge(bucket, sale.getTotal(), BigDecimal::add);
-        }
+        orderRepository.findAllBetween(from, to).forEach(order -> {
+            if (order.getStatus() != OrderEntity.OrderStatus.DELIVERED) {
+                return;
+            }
+            LocalDateTime bucket = order.getCreatedAt().truncatedTo(ChronoUnit.HOURS);
+            buckets.merge(bucket, order.getTotal(), BigDecimal::add);
+        });
 
         return buckets.entrySet().stream()
             .map(entry -> Map.<String, Object>of(

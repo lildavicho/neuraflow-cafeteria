@@ -47,8 +47,7 @@ class WSClient {
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 10
     this.reconnectDelay = 1000
-    this.stompSubscriptions = new Map()
-    this.listeners = new Map()
+    this.subscriptions = new Map()
     this.pendingSubscriptions = []
     this.connectionPromise = null
     this.statusCallbacks = []
@@ -85,18 +84,12 @@ class WSClient {
           this.connected = true
           this.reconnectAttempts = 0
           this.notifyStatus('connected')
-
-          if (this.pendingSubscriptions.length) {
-            this.pendingSubscriptions.forEach(({ topic, callback }) => {
-              this.addListener(topic, callback)
-            })
-            this.pendingSubscriptions = []
-          }
-
-          for (const topic of this.listeners.keys()) {
-            this.ensureStompSubscription(topic)
-          }
-
+          
+          this.pendingSubscriptions.forEach(({ topic, callback }) => {
+            this.doSubscribe(topic, callback)
+          })
+          this.pendingSubscriptions = []
+          
           resolve()
         },
         onDisconnect: () => {
@@ -117,7 +110,7 @@ class WSClient {
         },
         onWebSocketClose: () => {
           this.connected = false
-          this.stompSubscriptions.clear()
+          this.subscriptions.clear()
           this.notifyStatus('reconnecting')
           
           if (this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -140,53 +133,52 @@ class WSClient {
     return Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts), 30000)
   }
 
-  ensureStompSubscription(topic) {
-    if (!this.client || !this.connected) return null
-    if (this.stompSubscriptions.has(topic)) return this.stompSubscriptions.get(topic)
+  doSubscribe(topic, callback) {
+    if (!this.client || !this.connected) {
+      return null
+    }
 
-    const sub = this.client.subscribe(topic, (message) => {
-      let data
-      try { data = JSON.parse(message.body) } catch { data = message.body }
-      const cbs = this.listeners.get(topic)
-      if (cbs && cbs.size) {
-        for (const cb of cbs) {
-          try { cb(data) } catch (err) { console.error('[WS] listener error', err) }
-        }
+    const subscription = this.client.subscribe(topic, (message) => {
+      try {
+        const data = JSON.parse(message.body)
+        callback(data)
+      } catch {
+        callback(message.body)
       }
     })
 
-    this.stompSubscriptions.set(topic, sub)
-    return sub
-  }
-
-  addListener(topic, callback) {
-    if (!this.listeners.has(topic)) this.listeners.set(topic, new Set())
-    this.listeners.get(topic).add(callback)
+    this.subscriptions.set(topic, subscription)
+    return subscription
   }
 
   subscribe(topic, callback) {
     if (!this.connected) {
       this.pendingSubscriptions.push({ topic, callback })
-      this.addListener(topic, callback)
       this.connect().catch(() => {})
-      return () => this.removeListener(topic, callback)
+      return () => {
+        const index = this.pendingSubscriptions.findIndex(sub => sub.topic === topic && sub.callback === callback)
+        if (index !== -1) {
+          this.pendingSubscriptions.splice(index, 1)
+        }
+      }
     }
 
-    this.addListener(topic, callback)
-    this.ensureStompSubscription(topic)
+    this.doSubscribe(topic, callback)
 
-    return () => this.removeListener(topic, callback)
+    return () => {
+      const subscription = this.subscriptions.get(topic)
+      if (subscription) {
+        subscription.unsubscribe()
+        this.subscriptions.delete(topic)
+      }
+    }
   }
 
-  removeListener(topic, callback) {
-    const set = this.listeners.get(topic)
-    if (!set) return
-    set.delete(callback)
-    if (set.size === 0) {
-      const sub = this.stompSubscriptions.get(topic)
-      if (sub) sub.unsubscribe()
-      this.stompSubscriptions.delete(topic)
-      this.listeners.delete(topic)
+  unsubscribe(topic) {
+    const subscription = this.subscriptions.get(topic)
+    if (subscription) {
+      subscription.unsubscribe()
+      this.subscriptions.delete(topic)
     }
   }
 
@@ -195,7 +187,7 @@ class WSClient {
       this.client.deactivate()
       this.client = null
       this.connected = false
-      this.stompSubscriptions.clear()
+      this.subscriptions.clear()
       this.pendingSubscriptions = []
       this.connectionPromise = null
       this.notifyStatus('disconnected')

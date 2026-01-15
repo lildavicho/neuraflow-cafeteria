@@ -88,24 +88,6 @@ export const useOrderNotifications = (onNotification) => {
       }
     })
 
-    const unsubscribeAccepted = subscribe('/topic/orders/accepted', (data) => {
-      if (data?.type === 'order.accepted') {
-        callbackRef.current?.(data)
-      }
-    })
-
-    const unsubscribeDelivered = subscribe('/topic/orders/delivered', (data) => {
-      if (data?.type === 'order.delivered') {
-        callbackRef.current?.(data)
-      }
-    })
-
-    const unsubscribeCancelled = subscribe('/topic/orders/cancelled', (data) => {
-      if (data?.type === 'order.cancelled') {
-        callbackRef.current?.(data)
-      }
-    })
-
     const unsubscribeNotifications = subscribe('/topic/notifications', (evt) => {
       if (evt?.type) {
         callbackRef.current?.(evt)
@@ -115,9 +97,6 @@ export const useOrderNotifications = (onNotification) => {
     return () => {
       if (unsubscribeCreated) unsubscribeCreated()
       if (unsubscribeReady) unsubscribeReady()
-      if (unsubscribeAccepted) unsubscribeAccepted()
-      if (unsubscribeDelivered) unsubscribeDelivered()
-      if (unsubscribeCancelled) unsubscribeCancelled()
       if (unsubscribeNotifications) unsubscribeNotifications()
     }
   }, [subscribe])

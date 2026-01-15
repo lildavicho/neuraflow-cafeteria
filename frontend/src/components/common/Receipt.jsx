@@ -17,8 +17,7 @@ const Receipt = ({ order, onClose }) => {
     return date.toLocaleDateString('es-EC', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric',
-      timeZone: 'America/Guayaquil',
+      year: 'numeric'
     })
   }
 
@@ -26,8 +25,7 @@ const Receipt = ({ order, onClose }) => {
     const date = new Date(dateString)
     return date.toLocaleTimeString('es-EC', {
       hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Guayaquil',
+      minute: '2-digit'
     })
   }
 

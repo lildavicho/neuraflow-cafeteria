@@ -7,7 +7,7 @@ import { useOrderNotifications } from '../hooks/useWebSocket'
 import { formatDateTime } from '../utils/formatters'
 
 const NotificacionesPage = () => {
-  const { language, t } = useLanguage()
+  const { language } = useLanguage()
   const [notifications, setNotifications] = useState([])
   const [readIds, setReadIds] = useState(() => new Set())
   const { toasts, info, removeToast } = useToast()
@@ -16,7 +16,7 @@ const NotificacionesPage = () => {
     (event) => {
       if (!event) return
 
-      const entry = mapEventToNotification(event, t)
+      const entry = mapEventToNotification(event)
       setNotifications((prev) => {
         const deduped = prev.filter((item) => item.id !== entry.id)
         return [entry, ...deduped].slice(0, 50)
@@ -63,20 +63,20 @@ const NotificacionesPage = () => {
 
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900 dark:text-gray-50">{t('notifications')}</h1>
+          <h1 className="text-3xl font-semibold text-gray-900 dark:text-gray-50">Notificaciones</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {unread.length > 0 ? `${t('youHave')} ${unread.length} ${t('unreadAlerts')}` : t('allAlertsUpToDate')}
+            {unread.length > 0 ? `Tienes ${unread.length} alertas sin leer` : 'Todas las alertas están al día'}
           </p>
         </div>
         <div className="flex gap-2">
           {notifications.length > 0 && (
             <Button variant="ghost" onClick={clearNotifications}>
-              {t('clear')}
+              Vaciar
             </Button>
           )}
           {unread.length > 0 && (
             <Button variant="secondary" onClick={markAll}>
-              {t('markAllRead')}
+              Marcar todas como leídas
             </Button>
           )}
         </div>
@@ -85,7 +85,7 @@ const NotificacionesPage = () => {
       <section className="space-y-3">
         {notifications.length === 0 ? (
           <div className="card-brand text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">{t('noNotificationsYet')}</p>
+            <p className="text-gray-600 dark:text-gray-400">Aún no hay notificaciones en esta sesión</p>
           </div>
         ) : (
           notifications.map((notification) => {
@@ -98,7 +98,7 @@ const NotificacionesPage = () => {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      {notification.title || t('update')}
+                      {notification.title || 'Actualización'}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{notification.message}</p>
                   </div>
@@ -109,7 +109,7 @@ const NotificacionesPage = () => {
                 {!isRead && (
                   <div className="mt-3 flex items-center gap-2">
                     <Button variant="ghost" size="sm" onClick={() => markAsRead(notification.id)}>
-                      {t('markAsRead')}
+                      Marcar como leída
                     </Button>
                   </div>
                 )}
@@ -122,8 +122,7 @@ const NotificacionesPage = () => {
   )
 }
 
-const mapEventToNotification = (eventParam, t) => {
-  const event = eventParam || {}
+const mapEventToNotification = (event = {}) => {
   const { type = 'order.event', payload = {}, timestamp, order, orderId, status } = event
   const effectiveStatus = payload.status || status || order?.paymentStatus || order?.status || type
   const normalizedStatus = String(effectiveStatus || '')
@@ -135,13 +134,13 @@ const mapEventToNotification = (eventParam, t) => {
 
   if (!title) {
     if (type === 'ORDER_PAYMENT_UPDATED' || normalizedStatus.includes('PAYMENT')) {
-      title = t?.('paymentUpdated') || 'Pago actualizado'
+      title = 'Pago actualizado'
     } else if (normalizedStatus.toLowerCase().includes('created')) {
-      title = t?.('newOrder') || 'Nuevo pedido'
+      title = 'Nuevo pedido'
     } else if (normalizedStatus.toLowerCase().includes('ready')) {
-      title = t?.('orderReady') || 'Pedido listo'
+      title = 'Pedido listo'
     } else {
-      title = t?.('update') || 'Actualización'
+      title = 'Actualización'
     }
   }
 
@@ -167,7 +166,7 @@ const formatStatus = (status = '') =>
     .toString()
     .split('.')
     .pop()
-    .replaceAll(/[_-]/g, ' ')
-    .replaceAll(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
 
 export default NotificacionesPage
