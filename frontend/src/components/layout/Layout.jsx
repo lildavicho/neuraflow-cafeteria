@@ -29,7 +29,9 @@ const Layout = () => {
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
         
         <main ref={contentRef} className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
-          <Outlet />
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+            <Outlet />
+          </div>
         </main>
         
         <footer className="text-center text-sm text-gray-500 dark:text-gray-400 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">

@@ -18,10 +18,12 @@ import { usePeopleCount, useWebSocket } from '../hooks/useWebSocket'
 import { fetchOrders, confirmOrderPayment, fetchPublicProducts, fetchDashboardSnapshot } from '../services/apiService'
 import { useToast } from '../hooks/useToast'
 import Toast from '../components/common/Toast'
+import { useLanguage } from '../hooks/useLanguage'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
 const DashboardPage = () => {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [pendingTransfers, setPendingTransfers] = useState([])
   const { toasts, success, error, removeToast } = useToast()
@@ -210,13 +212,13 @@ const DashboardPage = () => {
     <div className="space-y-6 p-6">
       <Toast toasts={toasts} onRemove={removeToast} />
       <header ref={headerRef} className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">Panel – Cafetería</h1>
-        <p className="text-gray-600 dark:text-gray-400">Sistema de gestión y punto de venta</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">{t('dashboard')} – Cafetería</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('systemSubtitle')}</p>
       </header>
 
       <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
-          title="Ventas Hoy"
+          title={t('salesToday')}
           value={`$${Number(stats.sales || 0).toFixed(2)}`}
           change="Actualizado"
           icon="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
@@ -224,7 +226,7 @@ const DashboardPage = () => {
           index={0}
         />
         <StatCard
-          title="Órdenes Hoy"
+          title={t('ordersToday')}
           value={String(Number(stats.orders || 0))}
           change="Confirmadas"
           icon="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
@@ -232,7 +234,7 @@ const DashboardPage = () => {
           index={1}
         />
         <StatCard
-          title="Productos"
+          title={t('productsAvailable')}
           value={String(stats.products)}
           change="En inventario"
           icon="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
@@ -240,7 +242,7 @@ const DashboardPage = () => {
           index={2}
         />
         <StatCard
-          title="Ticket Promedio"
+          title={t('ticketAverage')}
           value={`$${Number(stats.avgTicket || 0).toFixed(2)}`}
           change="Por venta"
           icon="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
@@ -252,7 +254,7 @@ const DashboardPage = () => {
       <div className="card-brand">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Afluencia en Tiempo Real</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('realtimeFootfall')}</h3>
             <p className="text-3xl font-bold text-brand mt-2">Afluencia ahora: {currentCount} personas</p>
           </div>
           <div className="flex items-center gap-2">
@@ -295,7 +297,7 @@ const DashboardPage = () => {
 
       <div className="card-brand">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Pagos por Transferencia Pendientes de Confirmación</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('paymentsPendingConf')}</h3>
         </div>
         {pendingTransfers.length === 0 ? (
           <p className="text-sm text-gray-600 dark:text-gray-400">No hay pagos pendientes</p>
@@ -332,7 +334,7 @@ const DashboardPage = () => {
       <div className="card-brand">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Ventas en Vivo</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('liveSales')}</h3>
             <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
               Total hoy: ${Number(stats.sales || 0).toFixed(2)}
             </p>

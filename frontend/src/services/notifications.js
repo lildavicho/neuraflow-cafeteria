@@ -1,39 +1,47 @@
-import { getMessaging, getToken, onMessage } from 'firebase/messaging'
-import { app } from './firebase'
+import { getToken, onMessage } from 'firebase/messaging'
+import { firebaseConfig, getMessagingInstance } from './firebase'
 import api from './apiService'
 
 let messaging = null
 
-try {
-  if (typeof window !== 'undefined' && 'Notification' in window) {
-    messaging = getMessaging(app)
+const registerFirebaseServiceWorker = async () => {
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Service Workers no soportados')
   }
-} catch (err) {
-  console.warn('Firebase Messaging not available:', err)
+
+  const encodedConfig = encodeURIComponent(btoa(JSON.stringify(firebaseConfig)))
+  const swUrl = `/firebase-messaging-sw.js?config=${encodedConfig}`
+  const registration = await navigator.serviceWorker.register(swUrl)
+
+  const sendInitMessage = (reg) => {
+    const worker = reg.active ?? reg.waiting ?? reg.installing
+    worker?.postMessage({ type: 'firebase-init', config: firebaseConfig })
+  }
+
+  sendInitMessage(registration)
+  const ready = await navigator.serviceWorker.ready
+  sendInitMessage(ready)
+  return ready
 }
 
 export const requestNotificationPermission = async () => {
-  if (!messaging) {
-    console.warn('Messaging not initialized')
-    return null
-  }
-
   try {
     const permission = await Notification.requestPermission()
-    
-    if (permission === 'granted') {
-      const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY || import.meta.env.VITE_FB_VAPID_KEY
-      if (!vapidKey) {
-        console.error('Falta VITE_FIREBASE_VAPID_KEY en el entorno')
-        return null
-      }
-      const token = await getToken(messaging, { vapidKey })
-      
-      return token
-    } else {
-      console.log('Notification permission denied')
-      return null
-    }
+    if (permission !== 'granted') return null
+
+    const messagingInstance = await getMessagingInstance()
+    if (!messagingInstance) return null
+    messaging = messagingInstance
+
+    const swRegistration = await registerFirebaseServiceWorker()
+    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY || import.meta.env.VITE_FB_VAPID_KEY
+    if (!vapidKey) return null
+
+    const token = await getToken(messagingInstance, {
+      vapidKey,
+      serviceWorkerRegistration: swRegistration,
+    })
+    return token
   } catch (err) {
     console.error('Error requesting notification permission:', err)
     return null
@@ -54,21 +62,24 @@ export const registerToken = async (userId, token) => {
 }
 
 export const onMessageListener = (callback) => {
-  if (!messaging) return () => {}
-  
-  return onMessage(messaging, (payload) => {
-    callback(payload)
-  })
+  const attach = async () => {
+    try {
+      const instance = await getMessagingInstance()
+      if (!instance) return () => {}
+      messaging = instance
+      return onMessage(instance, (payload) => callback(payload))
+    } catch {
+      return () => {}
+    }
+  }
+  return attach()
 }
 
 export const initNotifications = async (userId) => {
-  if (!messaging || !userId) return
-  
+  if (!userId) return
   try {
     const token = await requestNotificationPermission()
-    if (token) {
-      await registerToken(userId, token)
-    }
+    if (token) await registerToken(userId, token)
   } catch (err) {
     console.error('Error initializing notifications:', err)
   }
