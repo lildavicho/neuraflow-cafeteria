@@ -81,7 +81,7 @@ public class DataSeeder {
     }
 
     private void seedDefaultCategories() {
-        String[] names = {"Bebidas", "Ingredientes", "Postres", "Comidas"};
+        String[] names = {"Desayunos", "Almuerzos", "Snacks", "Bebidas", "Postres", "Ingredientes"};
         for (String name : names) {
             try {
                 var existing = categoryRepository.findByName(name);

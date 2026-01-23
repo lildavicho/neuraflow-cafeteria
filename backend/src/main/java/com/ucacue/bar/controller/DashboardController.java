@@ -19,9 +19,11 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping("/snapshot")
-    @PreAuthorize("hasAnyRole('ADMIN','BUYER')")
+    @PreAuthorize("hasAnyRole('ADMIN','BUYER','CUSTOMER')")
     @Operation(summary = "Obtiene el estado inicial del dashboard")
     public ResponseEntity<?> snapshot() {
         return ResponseEntity.ok(dashboardService.snapshot());
     }
 }
+
+

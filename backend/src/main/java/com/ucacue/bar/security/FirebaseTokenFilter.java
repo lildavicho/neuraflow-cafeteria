@@ -63,7 +63,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
         try {
             String email = resolveEmailFromToken(token);
             if (email == null) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                chain.doFilter(request, response);
                 return;
             }
 
@@ -74,11 +74,11 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             }
 
             authenticate(email, userOpt.get().getRole().name(), request);
-            chain.doFilter(request, response);
         } catch (FirebaseAuthException ex) {
-            log.warn("[Auth] Invalid Firebase token: {}", ex.getMessage());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            log.debug("[Auth] Firebase token not applicable: {}", ex.getMessage());
         }
+
+        chain.doFilter(request, response);
     }
 
     private String extractBearerToken(HttpServletRequest request) {

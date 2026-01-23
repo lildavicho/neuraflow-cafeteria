@@ -44,9 +44,14 @@ export const registerToken = async (userId, token) => {
   if (!token) return
   
   try {
+    const deviceName = typeof navigator !== 'undefined'
+      ? String(navigator.userAgent || 'web').slice(0, 255)
+      : 'web'
     await api.post('/push/register', {
       token,
-      platform: 'web'
+      platform: 'web',
+      deviceName,
+      active: true
     })
   } catch (err) {
     console.error('Error registering FCM token:', err)

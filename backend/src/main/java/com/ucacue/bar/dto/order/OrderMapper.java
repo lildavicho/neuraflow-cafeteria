@@ -27,6 +27,9 @@ public final class OrderMapper {
             .notes(order.getNotes())
             .createdAt(order.getCreatedAt())
             .updatedAt(order.getUpdatedAt())
+            .preparationStartAt(order.getPreparationStartAt())
+            .estimatedReadyAt(order.getEstimatedReadyAt())
+            .actualReadyAt(order.getActualReadyAt())
             .items(order.getItems().stream().map(OrderMapper::toItem).toList())
             .build();
     }

@@ -9,13 +9,17 @@ import com.ucacue.bar.entity.UserEntity.UserRole;
 import com.ucacue.bar.exception.BadRequestException;
 import com.ucacue.bar.exception.UnauthorizedException;
 import com.ucacue.bar.repository.UserRepository;
+import com.ucacue.bar.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.util.Collections;
 
 @Service
 @Slf4j
@@ -24,6 +28,46 @@ public class AuthService {
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    
+    /**
+     * Login con email y contraseña tradicional
+     */
+    @Transactional(readOnly = true)
+    public AuthResponse login(LoginRequest request) {
+        UserEntity user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new UnauthorizedException("Credenciales inválidas"));
+        
+        if (!Boolean.TRUE.equals(user.getActive())) {
+            throw new UnauthorizedException("Usuario desactivado");
+        }
+        
+        if (user.getPasswordHash() == null || 
+            !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Credenciales inválidas");
+        }
+        
+        // Crear UserDetails para generar token
+        UserDetails userDetails = User.builder()
+            .username(user.getEmail())
+            .password(user.getPasswordHash())
+            .authorities(Collections.emptyList())
+            .build();
+        
+        String token = jwtUtil.generateToken(userDetails, user.getRole().name(), user.getId());
+        String refreshToken = jwtUtil.generateRefreshToken(userDetails, user.getRole().name(), user.getId());
+        
+        log.info("Usuario {} autenticado exitosamente", user.getEmail());
+        
+        return AuthResponse.builder()
+            .token(token)
+            .refreshToken(refreshToken)
+            .userId(user.getId())
+            .email(user.getEmail())
+            .fullName(user.getName())
+            .role(user.getRole().name())
+            .build();
+    }
     
     
     // Legacy register/login removed in Firebase-only mode
@@ -44,7 +88,23 @@ public class AuthService {
             boolean active = Boolean.TRUE.equals(user.getActive());
             if (!active) throw new UnauthorizedException("Usuario desactivado");
 
-            return toAuthResponse(user);
+            UserDetails userDetails = User.builder()
+                .username(user.getEmail())
+                .password(user.getPasswordHash() != null ? user.getPasswordHash() : "")
+                .authorities(Collections.emptyList())
+                .build();
+
+            String token = jwtUtil.generateToken(userDetails, user.getRole().name(), user.getId());
+            String refreshToken = jwtUtil.generateRefreshToken(userDetails, user.getRole().name(), user.getId());
+
+            return AuthResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken)
+                .userId(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getName())
+                .role(user.getRole().name())
+                .build();
         } catch (FirebaseAuthException e) {
             log.error("Firebase authentication error", e);
             throw new UnauthorizedException("Token de Firebase inválido");
@@ -67,7 +127,7 @@ public class AuthService {
                     u.setFirebaseUid(uid);
                     u.setName(name != null ? name : email.split("@")[0]);
                     u.setPasswordHash(passwordEncoder.encode(generateRandomPassword()));
-                    u.setRole(UserRole.BUYER);
+                    u.setRole(UserRole.CUSTOMER);
                     u.setActive(true);
                     u.setProvider("firebase");
                     if (picture != null) u.setAvatarUrl(picture);
@@ -75,17 +135,6 @@ public class AuthService {
                 }));
     }
 
-    private AuthResponse toAuthResponse(UserEntity user) {
-        return AuthResponse.builder()
-            .userId(user.getId())
-            .email(user.getEmail())
-            .fullName(user.getName())
-            .role(user.getRole().name())
-            .build();
-    }
-    
-    
-    
     // 2FA eliminado
     
     private static final SecureRandom RNG = new SecureRandom();

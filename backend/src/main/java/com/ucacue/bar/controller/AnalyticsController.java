@@ -25,7 +25,7 @@ public class AnalyticsController {
     private final AnalyticsService analyticsService;
 
     @GetMapping("/sales")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','CASHIER','BUYER','CUSTOMER')")
     @Operation(summary = "Serie temporal de ventas")
     public ResponseEntity<?> sales(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
                                    @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
@@ -33,7 +33,7 @@ public class AnalyticsController {
     }
 
     @GetMapping("/people")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','CASHIER','BUYER','CUSTOMER')")
     @Operation(summary = "Serie temporal de afluencia")
     public ResponseEntity<?> people(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
@@ -41,7 +41,7 @@ public class AnalyticsController {
     }
 
     @GetMapping("/sales-vs-people")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','CASHIER','BUYER','CUSTOMER')")
     @Operation(summary = "Relación ventas vs afluencia")
     public ResponseEntity<?> salesVsPeople(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
                                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
@@ -49,7 +49,7 @@ public class AnalyticsController {
     }
 
     @GetMapping(value = "/export")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','CASHIER','BUYER','CUSTOMER')")
     @Operation(summary = "Exportar reporte en Excel o PDF")
     public ResponseEntity<byte[]> export(@RequestParam(defaultValue = "excel") String format,
                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
@@ -63,3 +63,5 @@ public class AnalyticsController {
             .body(data);
     }
 }
+
+

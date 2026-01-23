@@ -1,5 +1,4 @@
-import axios from 'axios'
-import { getIdToken } from './authService'
+﻿import axios from 'axios'
 
 const resolveApiBaseUrl = () => {
   const explicitBase = import.meta.env.VITE_API_BASE_URL?.trim()
@@ -13,13 +12,12 @@ const resolveApiBaseUrl = () => {
         const desiredPort =
           (import.meta.env.VITE_API_DEV_PORT?.trim()) ||
           (import.meta.env.VITE_API_PORT?.trim()) ||
-          '80'
+          '8081'
         const effectiveOrigin = `${url.protocol}//${url.hostname}${desiredPort ? `:${desiredPort}` : ''}`
         return `${effectiveOrigin}/api`
       }
       return `${url.origin}/api`
     } catch {
-      // fallback
       return '/api'
     }
   }
@@ -31,29 +29,66 @@ export const API_BASE_URL = resolveApiBaseUrl().replace(/\/+$/, '')
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json; charset=UTF-8',
   },
 })
 
-api.interceptors.request.use(async (config) => {
-  const token = await getIdToken()
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
+// Interceptor de request - agregar token JWT
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers = config.headers || {}
+      config.headers.Authorization = 'Bearer ' + token
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
+// Interceptor de response - refrescar token automático y limpiar sesión si no se puede renovar
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('user')
-      globalThis.location.href = '/login'
+  async (error) => {
+    const originalRequest = error.config
+    const status = error.response?.status
+    const isAuthError = status === 401 || status === 403
+
+    if (isAuthError && !originalRequest?._retry) {
+      originalRequest._retry = true
+      const refreshToken = localStorage.getItem('refreshToken')
+
+      if (refreshToken) {
+        try {
+          const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken })
+          if (data?.token) {
+            localStorage.setItem('token', data.token)
+            api.defaults.headers.common.Authorization = 'Bearer ' + data.token
+            if (data?.refreshToken) {
+              localStorage.setItem('refreshToken', data.refreshToken)
+            }
+            originalRequest.headers = originalRequest.headers || {}
+            originalRequest.headers.Authorization = 'Bearer ' + data.token
+            return api(originalRequest)
+          }
+        } catch (refreshError) {
+          console.error('Refresh token failed', refreshError)
+        }
+      }
     }
+
+    if (isAuthError) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
+      if (!globalThis.location?.pathname?.includes('/login')) {
+        globalThis.location.href = '/login'
+      }
+    }
+
     return Promise.reject(error)
   }
 )
-
 // ---- Dashboard ----
 export const fetchDashboardSnapshot = async () => {
   const { data } = await api.get('/dashboard/snapshot')
@@ -198,8 +233,9 @@ export const exportAnalytics = async (format, params) => {
 }
 
 // ---- Push Notifications ----
-export const registerPushToken = async ({ token, platform }) => {
-  await api.post('/push/register', { token, platform })
+export const registerPushToken = async ({ token, platform, deviceName, active }) => {
+  await api.post('/push/register', { token, platform, deviceName, active })
 }
 
 export default api
+

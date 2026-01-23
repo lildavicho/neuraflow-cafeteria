@@ -1,7 +1,11 @@
 import api from './apiService'
 
-export const getCategories = async ({ active = true } = {}) => {
-  const { data } = await api.get('/categories', { params: { active } })
+export const getCategories = async ({ active } = {}) => {
+  const params = {}
+  if (typeof active === 'boolean') {
+    params.active = active
+  }
+  const { data } = await api.get('/categories', { params })
   return data
 }
 

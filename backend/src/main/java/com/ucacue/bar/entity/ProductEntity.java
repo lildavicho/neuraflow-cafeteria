@@ -71,6 +71,9 @@ public class ProductEntity {
     private LocalDateTime updatedAt;
 
     public enum ProductStatus {
-        AVAILABLE, SOLD_OUT, DISCONTINUED
+        ACTIVE, // legacy value; kept for backward compatibility
+        AVAILABLE,
+        SOLD_OUT,
+        DISCONTINUED
     }
 }

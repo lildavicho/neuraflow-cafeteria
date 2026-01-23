@@ -24,7 +24,7 @@ public class PushService {
     private final UserRepository userRepository;
 
     @Transactional
-    public void registerToken(Long userId, String token, String platform) {
+    public void registerToken(Long userId, String token, String platform, String deviceName, Boolean active) {
         UserEntity user = userRepository.findById(userId)
             .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
 
@@ -33,6 +33,9 @@ public class PushService {
         entity.setUser(user);
         entity.setFcmToken(token);
         entity.setPlatform(platform);
+        entity.setDeviceName(deviceName);
+        entity.setActive(active != null ? active : true);
+        entity.setLastUsed(java.time.LocalDateTime.now());
         pushTokenRepository.save(entity);
     }
 
@@ -41,7 +44,7 @@ public class PushService {
             log.debug("Firebase not configured, skipping push notification");
             return;
         }
-        pushTokenRepository.findByUserId(userId).forEach(token -> {
+        pushTokenRepository.findByUserIdAndActiveTrue(userId).forEach(token -> {
             try {
                 com.google.firebase.messaging.Notification notification = com.google.firebase.messaging.Notification
                     .builder()
@@ -54,6 +57,8 @@ public class PushService {
                     .setNotification(notification)
                     .build();
                 FirebaseMessaging.getInstance().sendAsync(message);
+                token.setLastUsed(java.time.LocalDateTime.now());
+                pushTokenRepository.save(token);
             } catch (Exception ex) {
                 log.warn("Failed to send push notification: {}", ex.getMessage());
             }

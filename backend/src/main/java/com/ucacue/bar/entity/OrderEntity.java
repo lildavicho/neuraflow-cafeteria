@@ -28,9 +28,9 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders", indexes = {
-    @Index(name = "idx_orders_created_at", columnList = "created_at"),
-    @Index(name = "idx_orders_status", columnList = "status"),
-    @Index(name = "idx_orders_user", columnList = "user_id")
+        @Index(name = "idx_orders_created_at", columnList = "created_at"),
+        @Index(name = "idx_orders_status", columnList = "status"),
+        @Index(name = "idx_orders_user", columnList = "user_id")
 })
 @Getter
 @Setter
@@ -89,6 +89,15 @@ public class OrderEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "preparation_start_at")
+    private LocalDateTime preparationStartAt;
+
+    @Column(name = "estimated_ready_at")
+    private LocalDateTime estimatedReadyAt;
+
+    @Column(name = "actual_ready_at")
+    private LocalDateTime actualReadyAt;
+
     public BigDecimal getEffectiveSubtotal() {
         return subtotal != null ? subtotal : BigDecimal.ZERO;
     }
@@ -103,11 +112,13 @@ public class OrderEntity {
     }
 
     public enum OrderStatus {
-        PENDING,
-        ACCEPTED,
-        READY,
-        DELIVERED,
-        CANCELLED
+        PENDING, // Pendiente
+        CONFIRMED, // Confirmada
+        PREPARING, // En preparación
+        READY, // Lista para entrega
+        DELIVERED, // Entregada
+        COMPLETED, // ✅ Agregar este valor - Completada/Pagada
+        CANCELLED // Cancelada
     }
 
     public enum PaymentMethod {
@@ -117,9 +128,9 @@ public class OrderEntity {
     }
 
     public enum PaymentStatus {
-        PAYMENT_IN_PROGRESS,
+        PENDING,
         PAID,
-        PAYMENT_PENDING_CONF,
-        PENDING_PAYMENT_CASH
+        FAILED,
+        REFUNDED
     }
 }

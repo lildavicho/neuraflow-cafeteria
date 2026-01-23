@@ -147,7 +147,12 @@ const mapEventToNotification = (event = {}) => {
   if (!message) {
     const statusLabel = formatStatus(normalizedStatus)
     const ref = idSource || code
-    message = ref ? `Orden ${ref}: ${statusLabel}` : `Pedido ${statusLabel}`
+    const eta = payload.estimatedMinutes ?? event.estimatedMinutes
+    const pickup = payload.pickupLocation ?? event.pickupLocation
+    let extra = ''
+    if (eta) extra += ` | ETA ${eta} min`
+    if (pickup) extra += ` | ${pickup}`
+    message = ref ? `Orden ${ref}: ${statusLabel}${extra}` : `Pedido ${statusLabel}${extra}`
   }
 
   const receivedAt = payload.timestamp || timestamp || Date.now()

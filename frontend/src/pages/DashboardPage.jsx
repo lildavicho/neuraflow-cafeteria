@@ -78,7 +78,7 @@ const DashboardPage = () => {
     try {
       const page = await fetchOrders({ page: 0, size: 50 })
       const content = Array.isArray(page?.content) ? page.content : (Array.isArray(page) ? page : [])
-      const filtered = content.filter((o) => o.paymentStatus === 'PAYMENT_PENDING_CONF')
+      const filtered = content.filter((o) => o.paymentStatus === 'PENDING')
       setPendingTransfers(filtered)
     } catch (e) {
       console.error('Error loading pending transfers', e)
@@ -115,7 +115,7 @@ const DashboardPage = () => {
       setPendingTransfers((prev) => {
         const map = new Map(prev.map((o) => [o.id, o]))
         map.set(order.id, order)
-        return Array.from(map.values()).filter((o) => o.paymentStatus === 'PAYMENT_PENDING_CONF')
+        return Array.from(map.values()).filter((o) => o.paymentStatus === 'PENDING')
       })
     })
 
@@ -257,18 +257,27 @@ const DashboardPage = () => {
           </div>
           <div className="flex items-center gap-2">
             {status === 'connected' && (
-              <span className="flex items-center gap-2 text-sm text-success-600 dark:text-success-400">
-                <i className="bi bi-wifi"></i> Conectado
+              <span className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Conectado
               </span>
             )}
             {status === 'reconnecting' && (
-              <span className="flex items-center gap-2 text-sm text-warning-600 dark:text-warning-400">
-                <i className="bi bi-arrow-repeat animate-spin"></i> Reconectando
+              <span className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full">
+                <i className="bi bi-arrow-repeat animate-spin"></i>
+                Reconectando...
               </span>
             )}
-            {status === 'disconnected' && (
-              <span className="flex items-center gap-2 text-sm text-danger-600 dark:text-danger-400">
-                <i className="bi bi-wifi-off"></i> Desconectado
+            {(status === 'disconnected' || status === 'error') && (
+              <span className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-3 py-1 rounded-full">
+                <i className="bi bi-wifi-off"></i>
+                Desconectado
+                <button
+                  onClick={() => window.location.reload()}
+                  className="ml-1 underline hover:no-underline"
+                >
+                  Reconectar
+                </button>
               </span>
             )}
           </div>
@@ -281,8 +290,8 @@ const DashboardPage = () => {
               <div className="text-center">
                 <i className="bi bi-graph-up text-4xl text-gray-400 mb-2"></i>
                 <p className="text-gray-500 dark:text-gray-400">Esperando datos en tiempo real...</p>
-                <button 
-                  onClick={() => globalThis.location.reload()} 
+                <button
+                  onClick={() => globalThis.location.reload()}
                   className="mt-4 btn-brand text-sm"
                 >
                   Reintentar
@@ -339,18 +348,21 @@ const DashboardPage = () => {
           </div>
           <div className="flex items-center gap-2">
             {status === 'connected' && (
-              <span className="flex items-center gap-2 text-sm text-success-600 dark:text-success-400">
-                <i className="bi bi-wifi"></i> Conectado
+              <span className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                En vivo
               </span>
             )}
             {status === 'reconnecting' && (
-              <span className="flex items-center gap-2 text-sm text-warning-600 dark:text-warning-400">
-                <i className="bi bi-arrow-repeat animate-spin"></i> Reconectando
+              <span className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full">
+                <i className="bi bi-arrow-repeat animate-spin"></i>
+                Reconectando...
               </span>
             )}
-            {status === 'disconnected' && (
-              <span className="flex items-center gap-2 text-sm text-danger-600 dark:text-danger-400">
-                <i className="bi bi-wifi-off"></i> Desconectado
+            {(status === 'disconnected' || status === 'error') && (
+              <span className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-3 py-1 rounded-full">
+                <i className="bi bi-wifi-off"></i>
+                Sin conexión
               </span>
             )}
           </div>
@@ -360,8 +372,8 @@ const DashboardPage = () => {
             <div className="text-center">
               <i className="bi bi-graph-up text-4xl text-gray-400 mb-2"></i>
               <p className="text-gray-500 dark:text-gray-400">Esperando datos de ventas...</p>
-              <button 
-                onClick={() => globalThis.location.reload()} 
+              <button
+                onClick={() => globalThis.location.reload()}
                 className="mt-4 btn-brand text-sm"
               >
                 Reintentar

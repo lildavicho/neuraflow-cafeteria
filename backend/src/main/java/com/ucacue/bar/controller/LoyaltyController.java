@@ -22,7 +22,7 @@ public class LoyaltyController {
     private final LoyaltyService loyaltyService;
 
     @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('ADMIN','BUYER')")
+    @PreAuthorize("hasAnyRole('ADMIN','BUYER','CUSTOMER')")
     @Operation(summary = "Saldo de puntos del usuario actual")
     public ResponseEntity<LoyaltyBalanceResponse> myBalance(Authentication authentication) {
         return ResponseEntity.ok(loyaltyService.getBalanceByEmail(authentication.getName()));
@@ -35,3 +35,5 @@ public class LoyaltyController {
         return ResponseEntity.ok(loyaltyService.getLedger(userId));
     }
 }
+
+

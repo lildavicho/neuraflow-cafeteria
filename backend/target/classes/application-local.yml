@@ -1,0 +1,57 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/ucacue_erp?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=America/Guayaquil&createDatabaseIfNotExist=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ucacue_user
+    password: ucacue_pass
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        connection:
+          characterEncoding: UTF-8
+          useUnicode: true
+    show-sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  mvc:
+    servlet:
+      path: /api
+  data:
+    redis:
+      repositories:
+        enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+security:
+  jwt:
+    secret: local-dev-jwt-secret-key-for-development-only-32chars
+    expiration: 86400
+    refresh-expiration: 604800
+
+firebase:
+  enabled: true
+  service-account-path: "C:/Sistema Bar Final/firebase-credentials.json"
+  project-id: baru-fe8a3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  health:
+    db:
+      enabled: true
+    mail:
+      enabled: false

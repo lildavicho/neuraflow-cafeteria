@@ -26,5 +26,8 @@ public class OrderResponse {
     String notes;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
+    LocalDateTime preparationStartAt;
+    LocalDateTime estimatedReadyAt;
+    LocalDateTime actualReadyAt;
     List<OrderItemResponse> items;
 }

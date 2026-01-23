@@ -1,6 +1,7 @@
 package com.ucacue.bar.algo;
 
 import com.ucacue.bar.repository.OrderItemRepository;
+import com.ucacue.bar.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.*;
 public class DemandForecastService {
     
     private final OrderItemRepository orderItemRepository;
+    private final OrderRepository orderRepository;
     private static final double DEFAULT_ALPHA = 0.3; // Smoothing parameter
     
     /**
@@ -240,5 +242,69 @@ public class DemandForecastService {
         factors.put("Sunday", 0.7);
         
         return factors;
+    }
+
+    /**
+     * Simple staffing recommendation based on hourly order volumes.
+     */
+    public List<Map<String, Object>> getStaffingRecommendation(int daysAhead) {
+        int days = Math.max(1, daysAhead);
+        LocalDateTime end = LocalDateTime.now();
+        LocalDateTime start = end.minusDays(14);
+
+        List<Object[]> rows = orderRepository.countOrdersByHourBetween(start, end);
+        Map<Integer, List<Long>> byHour = new HashMap<>();
+
+        for (Object[] row : rows) {
+            LocalDateTime bucket = toLocalDateTime(row[0]);
+            if (bucket == null) continue;
+            int hour = bucket.getHour();
+            long count = row[1] != null ? ((Number) row[1]).longValue() : 0L;
+            byHour.computeIfAbsent(hour, key -> new ArrayList<>()).add(count);
+        }
+
+        Map<Integer, Double> avgByHour = new HashMap<>();
+        for (int hour = 0; hour < 24; hour++) {
+            List<Long> counts = byHour.getOrDefault(hour, List.of());
+            double avg = counts.stream().mapToLong(Long::longValue).average().orElse(0.0);
+            avgByHour.put(hour, avg);
+        }
+
+        LocalDateTime base = end.withMinute(0).withSecond(0).withNano(0);
+        List<Map<String, Object>> recommendations = new ArrayList<>();
+        int totalHours = days * 24;
+
+        for (int i = 0; i < totalHours; i++) {
+            LocalDateTime slot = base.plusHours(i);
+            double predictedOrders = avgByHour.getOrDefault(slot.getHour(), 0.0);
+            int recommendedStaff = Math.max(2, (int) Math.ceil(predictedOrders / 4.0));
+            recommendations.add(Map.of(
+                "datetime", slot,
+                "predictedOrders", Math.round(predictedOrders),
+                "recommendedStaff", recommendedStaff
+            ));
+        }
+
+        return recommendations;
+    }
+
+    private LocalDateTime toLocalDateTime(Object value) {
+        if (value instanceof java.sql.Timestamp ts) {
+            return ts.toLocalDateTime();
+        }
+        if (value instanceof java.sql.Date dt) {
+            return dt.toLocalDate().atStartOfDay();
+        }
+        if (value instanceof LocalDateTime ldt) {
+            return ldt;
+        }
+        if (value instanceof String str) {
+            try {
+                return LocalDateTime.parse(str.replace(" ", "T"));
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 }

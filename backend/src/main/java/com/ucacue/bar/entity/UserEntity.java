@@ -63,6 +63,9 @@ public class UserEntity {
     private LocalDateTime updatedAt;
 
     public enum UserRole {
-        ADMIN, BUYER
+        ADMIN,
+        BUYER,
+        CASHIER,
+        CUSTOMER
     }
 }

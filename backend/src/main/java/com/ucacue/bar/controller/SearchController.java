@@ -26,7 +26,7 @@ public class SearchController {
 
     @GetMapping("/products")
     @Operation(summary = "Search products by query")
-    @PreAuthorize("hasAnyRole('ADMIN','BUYER')")
+    @PreAuthorize("hasAnyRole('ADMIN','BUYER','CUSTOMER')")
     public ResponseEntity<List<Map<String, Object>>> searchProducts(@RequestParam("q") String q) {
         var page = productRepository.searchProducts(q, org.springframework.data.domain.PageRequest.of(0, 50));
         List<ProductEntity> items = page.getContent();
@@ -45,3 +45,5 @@ public class SearchController {
         return ResponseEntity.ok(out);
     }
 }
+
+

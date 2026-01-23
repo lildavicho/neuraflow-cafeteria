@@ -23,20 +23,24 @@ public class PushController {
     private final com.ucacue.bar.repository.UserRepository userRepository;
 
     @PostMapping("/register")
-    @PreAuthorize("hasAnyRole('ADMIN','BUYER')")
+    @PreAuthorize("hasAnyRole('ADMIN','BUYER','CUSTOMER')")
     @Operation(summary = "Registrar token FCM para notificaciones push")
     public ResponseEntity<Void> register(@RequestBody @jakarta.validation.Valid PushRegisterRequest request,
                                          Authentication authentication) {
         Long userId = userRepository.findByEmail(authentication.getName())
             .map(com.ucacue.bar.entity.UserEntity::getId)
             .orElseThrow(() -> new com.ucacue.bar.exception.NotFoundException("Usuario no encontrado"));
-        pushService.registerToken(userId, request.token(), request.platform());
+        pushService.registerToken(userId, request.token(), request.platform(), request.deviceName(), request.active());
         return ResponseEntity.accepted().build();
     }
 
     public record PushRegisterRequest(
         @NotBlank
         String token,
-        String platform
+        String platform,
+        String deviceName,
+        Boolean active
     ) {}
 }
+
+

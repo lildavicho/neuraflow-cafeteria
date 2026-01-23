@@ -12,6 +12,7 @@ import { Line } from 'react-chartjs-2'
 import { useToast } from '../hooks/useToast'
 import Toast from '../components/common/Toast'
 import { useLanguage } from '../hooks/useLanguage'
+import { useAuth } from '../hooks/useAuth'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
@@ -30,12 +31,21 @@ const ReportesPage = () => {
   const { toasts, error, success, removeToast } = useToast()
   const [range, setRange] = useState(initialRange)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
   const [salesData, setSalesData] = useState([])
   const [peopleData, setPeopleData] = useState([])
   const [correlatedData, setCorrelatedData] = useState([])
+  const { token, loading: authLoading } = useAuth()
 
   const loadAnalytics = useCallback(async () => {
+    if (authLoading) return
+    if (!token) {
+      setLoading(false)
+      setLoadError('Inicia sesi\u00f3n para ver los reportes.')
+      return
+    }
     setLoading(true)
+    setLoadError(null)
     try {
       const params = {
         from: range.from ? `${range.from}T00:00:00` : undefined,
@@ -51,15 +61,22 @@ const ReportesPage = () => {
       setCorrelatedData(combined?.series ?? [])
     } catch (err) {
       console.error(err)
-      error('No se pudieron cargar los reportes')
+      const status = err?.response?.status
+      const message = status === 401 || status === 403
+        ? 'Sesión expirada. Inicia sesión nuevamente.'
+        : 'No se pudieron cargar los reportes. Intenta nuevamente.'
+      setLoadError(message)
+      error(message)
     } finally {
       setLoading(false)
     }
-  }, [error, range])
+  }, [authLoading, token, error, range])
 
   useEffect(() => {
-    loadAnalytics()
-  }, [loadAnalytics])
+    if (!authLoading) {
+      loadAnalytics()
+    }
+  }, [authLoading, loadAnalytics])
 
   const salesChart = useMemo(() => {
     const labels = salesData.map((item) => formatDate(item.date || item.timestamp, language))
@@ -161,6 +178,15 @@ const ReportesPage = () => {
         <div className="flex items-center justify-center h-56">
           <div className="w-14 h-14 border-4 border-brand border-t-transparent rounded-full animate-spin" />
         </div>
+      ) : loadError ? (
+        <div className="card-brand border border-red-200 dark:border-red-700/60 bg-red-50 dark:bg-red-900/20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <p className="text-sm text-red-700 dark:text-red-200">{loadError}</p>
+            <Button variant="outline" onClick={loadAnalytics}>
+              Reintentar
+            </Button>
+          </div>
+        </div>
       ) : (
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="card-brand h-80">
@@ -174,36 +200,38 @@ const ReportesPage = () => {
         </section>
       )}
 
-      <section className="card-brand">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Relación ventas vs afluencia</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-900/30">
-              <tr>
-                <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-300">Fecha</th>
-                <th className="px-4 py-2 text-right text-gray-600 dark:text-gray-300">Ventas</th>
-                <th className="px-4 py-2 text-right text-gray-600 dark:text-gray-300">Personas</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {correlatedData.map((point, index) => (
-                <tr key={index}>
-                  <td className="px-4 py-2 text-gray-900 dark:text-gray-100">{formatDate(point.date, language)}</td>
-                  <td className="px-4 py-2 text-right text-gray-900 dark:text-gray-100">{formatCurrency(point.sales, language)}</td>
-                  <td className="px-4 py-2 text-right text-gray-900 dark:text-gray-100">{point.people}</td>
-                </tr>
-              ))}
-              {correlatedData.length === 0 && (
+      {!loadError && (
+        <section className="card-brand">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Relación ventas vs afluencia</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-900/30">
                 <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
-                    No hay datos en el rango seleccionado
-                  </td>
+                  <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-300">Fecha</th>
+                  <th className="px-4 py-2 text-right text-gray-600 dark:text-gray-300">Ventas</th>
+                  <th className="px-4 py-2 text-right text-gray-600 dark:text-gray-300">Personas</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {correlatedData.map((point, index) => (
+                  <tr key={index}>
+                    <td className="px-4 py-2 text-gray-900 dark:text-gray-100">{formatDate(point.date, language)}</td>
+                    <td className="px-4 py-2 text-right text-gray-900 dark:text-gray-100">{formatCurrency(point.sales, language)}</td>
+                    <td className="px-4 py-2 text-right text-gray-900 dark:text-gray-100">{point.people}</td>
+                  </tr>
+                ))}
+                {correlatedData.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                      No hay datos en el rango seleccionado
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   )
 }

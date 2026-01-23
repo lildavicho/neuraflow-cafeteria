@@ -10,4 +10,6 @@ public interface PushTokenRepository extends JpaRepository<PushTokenEntity, Long
     Optional<PushTokenEntity> findByFcmToken(String fcmToken);
 
     List<PushTokenEntity> findByUserId(Long userId);
+
+    List<PushTokenEntity> findByUserIdAndActiveTrue(Long userId);
 }

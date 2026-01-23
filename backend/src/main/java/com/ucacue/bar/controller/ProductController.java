@@ -24,7 +24,7 @@ public class ProductController {
     private final ProductService productService;
     
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'BUYER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BUYER', 'CUSTOMER')")
     @Operation(summary = "Get all products with pagination")
     public ResponseEntity<Page<ProductDTO>> getAllProducts(
             @RequestParam(required = false) String search,
@@ -41,7 +41,7 @@ public class ProductController {
     }
     
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'BUYER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BUYER', 'CUSTOMER')")
     @Operation(summary = "Get product by ID")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
@@ -90,3 +90,5 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateStock(id, quantity, type, reason));
     }
 }
+
+

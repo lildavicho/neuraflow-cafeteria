@@ -27,4 +27,32 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 
     @Query("select o from OrderEntity o where o.createdAt between :from and :to")
     List<OrderEntity> findAllBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query(value = "SELECT AVG(TIMESTAMPDIFF(MINUTE, preparation_start_at, actual_ready_at)) " +
+                   "FROM orders " +
+                   "WHERE preparation_start_at IS NOT NULL " +
+                   "AND actual_ready_at IS NOT NULL",
+           nativeQuery = true)
+    Double averagePreparationMinutes();
+
+    @Query(value = "SELECT COUNT(*) FROM orders " +
+                   "WHERE preparation_start_at IS NOT NULL " +
+                   "AND actual_ready_at IS NOT NULL",
+           nativeQuery = true)
+    Long countPreparationSamples();
+
+    @Query(value = "SELECT COUNT(*) FROM orders " +
+                   "WHERE status IN ('PREPARING','CONFIRMED') " +
+                   "AND created_at >= :since",
+           nativeQuery = true)
+    Long countActiveSince(@Param("since") LocalDateTime since);
+
+    @Query(value = "SELECT DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00') AS hour_bucket, COUNT(*) AS cnt " +
+                   "FROM orders " +
+                   "WHERE created_at BETWEEN :from AND :to " +
+                   "GROUP BY hour_bucket " +
+                   "ORDER BY hour_bucket",
+           nativeQuery = true)
+    List<Object[]> countOrdersByHourBetween(@Param("from") LocalDateTime from,
+                                            @Param("to") LocalDateTime to);
 }

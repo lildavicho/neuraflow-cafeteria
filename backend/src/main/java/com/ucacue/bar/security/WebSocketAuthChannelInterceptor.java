@@ -1,7 +1,5 @@
 package com.ucacue.bar.security;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseToken;
 import com.ucacue.bar.entity.UserEntity;
 import com.ucacue.bar.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +21,7 @@ import java.util.List;
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
 
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -30,20 +29,30 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             String authHeader = accessor.getFirstNativeHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("Missing Authorization header");
+                // Si no hay token, permitimos conexión anónima (o rechazamos según política).
+                // Para este sistema, permitiremos conexión y el SecurityConfig manejará las
+                // subscripciones
+                // o rechazamos aquí si todo WS requiere auth.
+                // El frontend envía token, así que validamos si está presente.
+                return message;
             }
             String token = authHeader.substring(7);
             try {
-                FirebaseToken decoded = FirebaseAuth.getInstance().verifyIdToken(token);
-                String email = decoded.getEmail();
-                UserEntity user = userRepository.findByEmail(email)
-                    .filter(UserEntity::getActive)
-                    .orElseThrow(() -> new IllegalAccessException("User not active or onboarded"));
-                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
-                accessor.setUser(new UsernamePasswordAuthenticationToken(email, null, authorities));
+                String email = jwtUtil.extractUsername(token);
+                if (email != null && !jwtUtil.isTokenExpired(token)) {
+                    UserEntity user = userRepository.findByEmail(email)
+                            .filter(UserEntity::getActive)
+                            .orElse(null);
+
+                    if (user != null) {
+                        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+                        accessor.setUser(new UsernamePasswordAuthenticationToken(email, null, authorities));
+                    }
+                }
             } catch (Exception e) {
                 log.warn("Invalid WS token: {}", e.getMessage());
-                throw new IllegalArgumentException("Invalid token");
+                // No autenticamos, conexión será anónima o fallará si SecurityConfig lo
+                // requiere
             }
         }
         return message;
