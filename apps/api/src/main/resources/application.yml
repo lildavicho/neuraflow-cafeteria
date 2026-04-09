@@ -1,6 +1,8 @@
 spring:
   application:
     name: ucacue-bar
+  config:
+    import: optional:file:.env[.properties]
   mvc:
     servlet:
       path: ${CONTEXT_PATH:/api}
