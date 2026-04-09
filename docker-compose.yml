@@ -1,6 +1,6 @@
 # UCACUE Bar - Docker Compose
-# Configuracion simplificada para inicio rapido
-# Para configuracion completa con nginx y mediamtx, usar ops/docker-compose.yml
+# Perfil principal para piloto comercial controlado
+# Backend Spring Boot + Angular + MySQL + Redis
 
 name: ucacue-bar
 
@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${DB_NAME:-ucacue_erp}
+      MYSQL_DATABASE: ${DB_NAME:-bar_escolar}
       MYSQL_USER: ${DB_USER:-ucacue_user}
       MYSQL_PASSWORD: ${DB_PASS:-ucacue_pass}
       TZ: America/Guayaquil
@@ -49,7 +49,7 @@ services:
   # Backend Spring Boot
   backend:
     build:
-      context: ./backend
+      context: ./apps/api
       dockerfile: Dockerfile
     container_name: ucacue_backend
     restart: unless-stopped
@@ -57,13 +57,15 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: ${DB_NAME:-ucacue_erp}
+      DB_NAME: ${DB_NAME:-bar_escolar}
       DB_USER: ${DB_USER:-ucacue_user}
       DB_PASS: ${DB_PASS:-ucacue_pass}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-default_jwt_secret_change_in_production}
       FIREBASE_ENABLED: ${FIREBASE_ENABLED:-false}
+    env_file:
+      - ./apps/api/.env
     ports:
       - "8090:8080"
     depends_on:
@@ -74,6 +76,7 @@ services:
     volumes:
       - backend_logs:/app/logs
       - backend_uploads:/app/uploads
+      - ./ops/sri/certs:/app/certs:ro
     networks:
       - ucacue_network
     healthcheck:
@@ -83,15 +86,12 @@ services:
       retries: 5
       start_period: 60s
 
-  # Frontend Vite/React
+  # Frontend Angular
   frontend:
     build:
-      context: ./frontend
+      context: ./apps/web-angular
       dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8090/api}
-        VITE_WS_URL: ${VITE_WS_URL:-http://localhost:8090/api/ws}
-    container_name: ucacue_frontend
+    container_name: ucacue_frontend_angular
     restart: unless-stopped
     ports:
       - "80:80"

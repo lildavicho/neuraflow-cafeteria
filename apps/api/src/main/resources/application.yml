@@ -1,0 +1,146 @@
+spring:
+  application:
+    name: ucacue-bar
+  mvc:
+    servlet:
+      path: ${CONTEXT_PATH:/api}
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:bar_escolar}?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=America/Guayaquil&createDatabaseIfNotExist=true}
+    username: ${DB_USER:ucacue_user}
+    password: ${DB_PASS:ucacue_pass}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 20000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: ${SHOW_SQL:false}
+        jdbc:
+          time_zone: UTC
+        connection:
+          characterEncoding: UTF-8
+          useUnicode: true
+    show-sql: ${SHOW_SQL:false}
+    open-in-view: false
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000
+      repositories:
+        enabled: false
+  cache:
+    type: caffeine
+    cache-names: firebase-tokens, products-public
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=60s
+
+  # mail deshabilitado
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      force: true
+  error:
+    include-message: always
+    include-binding-errors: always
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:86400}
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800}
+
+jwt:
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+firebase:
+  project-id: ${FIREBASE_PROJECT_ID:}
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+  enabled: ${FIREBASE_ENABLED:true}
+
+payment:
+  payphone:
+    key: ${PAYPHONE_KEY}
+    endpoint: ${PAYPHONE_ENDPOINT:https://pay.payphonetodoesposible.com/api}
+  datafast:
+    key: ${DATAFAST_KEY}
+    endpoint: ${DATAFAST_ENDPOINT:https://sandbox.datafast.com.ec/api}
+
+webrtc:
+  gateway:
+    base-url: ${WEBRTC_GATEWAY_BASE:http://localhost:8889}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  health:
+    mail:
+      enabled: false
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.ucacue.bar: ${LOG_LEVEL:DEBUG}
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://localhost:8090,http://127.0.0.1:8090}
+  loyalty:
+    points-per-dollar: ${LOYALTY_POINTS_PER_DOLLAR:1}
+  sri:
+    connect-timeout-ms: ${SRI_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${SRI_READ_TIMEOUT_MS:15000}
+    authorization-poll-delay-ms: ${SRI_AUTHORIZATION_POLL_DELAY_MS:1500}
+    auto-query-after-reception: ${SRI_AUTO_QUERY_AFTER_RECEPTION:true}
+    signature:
+      mode: ${SRI_SIGNATURE_MODE:NONE}
+      pkcs12-path: ${SRI_PKCS12_PATH:}
+      pkcs12-password: ${SRI_PKCS12_PASSWORD:}
+      key-alias: ${SRI_KEY_ALIAS:}
+    test:
+      reception-url: ${SRI_TEST_RECEPTION_URL:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline}
+      authorization-url: ${SRI_TEST_AUTHORIZATION_URL:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline}
+    production:
+      reception-url: ${SRI_PRODUCTION_RECEPTION_URL:https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline}
+      authorization-url: ${SRI_PRODUCTION_AUTHORIZATION_URL:https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline}

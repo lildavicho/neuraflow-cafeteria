@@ -1,0 +1,50 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:bar-test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+  flyway:
+    enabled: false
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+security:
+  jwt:
+    secret: test-secret-key-test-secret-key-123456
+    expiration: 86400
+    refresh-expiration: 604800
+
+firebase:
+  enabled: false
+
+app:
+  seed:
+    enabled: false
+  allowed-origins: http://localhost:4200
+  sri:
+    authorization-poll-delay-ms: 0
+    auto-query-after-reception: true
+    signature:
+      mode: NONE
+    test:
+      reception-url: https://test-recepcion.local
+      authorization-url: https://test-autorizacion.local
+    production:
+      reception-url: https://prod-recepcion.local
+      authorization-url: https://prod-autorizacion.local
+
+logging:
+  level:
+    root: WARN
+    com.ucacue.bar: INFO

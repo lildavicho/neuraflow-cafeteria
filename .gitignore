@@ -4,10 +4,28 @@
 /dist/
 /node_modules/
 /out/
+**/target/
+**/build/
+**/dist/
+**/node_modules/
+**/.angular/
+**/.cache/
+
+# Runtime and local workspace noise
+/.audit/
+/.codex-runtime/
+/frontend-angular/
+/ucacue-bar-frontend/
+/ops/logs/
+*.gz
+*.tmp
+firebase-debug.log
 
 # IDE
 /.idea/
 /.vscode/
+**/.idea/
+**/.vscode/
 
 # Logs y configuraciones temporales
 *.log

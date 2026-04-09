@@ -1,0 +1,62 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:bar_escolar}?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=America/Guayaquil&createDatabaseIfNotExist=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USER:ucacue_user}
+    password: ${DB_PASS:ucacue_pass}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        connection:
+          characterEncoding: UTF-8
+          useUnicode: true
+    show-sql: ${SHOW_SQL:false}
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  mvc:
+    servlet:
+      path: /api
+  data:
+    redis:
+      repositories:
+        enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:9f784be9699b14d2cab1eac67bf32a19d87e0f6f54b3c21def98ab87c6d5e4f}
+    expiration: 86400
+    refresh-expiration: 604800
+
+firebase:
+  enabled: ${FIREBASE_ENABLED:false}
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+  project-id: ${FIREBASE_PROJECT_ID:}
+
+app:
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://localhost:8090}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  health:
+    db:
+      enabled: true
+    mail:
+      enabled: false
+
+
