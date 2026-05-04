@@ -1,0 +1,779 @@
+/* ============================================================
+   InsightVision Enterprise AI — Design Tokens v2
+   Vercel/Stripe-style oscuro premium · Geist + Geist Mono
+   Responsive · Motion · Premium atmosphere
+   ============================================================ */
+
+:root {
+  /* ——— Brand ——— */
+  --iv-primary: #4F46E5;
+  --iv-primary-hover: #4338CA;
+  --iv-primary-press: #3730A3;
+  --iv-accent: #8B5CF6;
+  --iv-accent-soft: #A78BFA;
+
+  /* ——— Surfaces (dark, default) ——— */
+  --iv-bg: #07090E;
+  --iv-bg-elevated: #0B0E15;
+  --iv-surface: #0F141C;
+  --iv-surface-2: #131925;
+  --iv-surface-3: #182032;
+  --iv-card: #0F141C;
+
+  /* ——— Borders / Lines ——— */
+  --iv-border: rgba(148, 163, 184, 0.12);
+  --iv-border-strong: rgba(148, 163, 184, 0.22);
+  --iv-border-soft: rgba(148, 163, 184, 0.06);
+  --iv-divider: rgba(148, 163, 184, 0.08);
+
+  /* ——— Text ——— */
+  --iv-text: #F8FAFC;
+  --iv-text-muted: #94A3B8;
+  --iv-text-dim: #64748B;
+  --iv-text-faint: #475569;
+
+  /* ——— Status ——— */
+  --iv-success: #22C55E;
+  --iv-success-bg: rgba(34, 197, 94, 0.10);
+  --iv-warning: #F59E0B;
+  --iv-warning-bg: rgba(245, 158, 11, 0.10);
+  --iv-error: #EF4444;
+  --iv-error-bg: rgba(239, 68, 68, 0.10);
+  --iv-info: #38BDF8;
+  --iv-info-bg: rgba(56, 189, 248, 0.10);
+
+  /* ——— Glow / Effects ——— */
+  --iv-glow-primary: 0 0 80px -20px rgba(79, 70, 229, 0.6);
+  --iv-glow-accent: 0 0 80px -20px rgba(139, 92, 246, 0.55);
+  --iv-glow-soft: 0 0 0 1px rgba(79, 70, 229, 0.15), 0 8px 30px -10px rgba(79, 70, 229, 0.3);
+
+  /* ——— Shadow ——— */
+  --iv-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --iv-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --iv-shadow-lg: 0 20px 60px -20px rgba(0, 0, 0, 0.7);
+
+  /* ——— Radius ——— */
+  --iv-r-xs: 4px;
+  --iv-r-sm: 6px;
+  --iv-r-md: 8px;
+  --iv-r-lg: 12px;
+  --iv-r-xl: 16px;
+  --iv-r-2xl: 20px;
+  --iv-r-pill: 999px;
+
+  /* ——— Typography ——— */
+  --iv-font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --iv-font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --iv-font-display: 'Geist', ui-sans-serif, system-ui, sans-serif;
+
+  /* ——— Density (overridable by tweaks) ——— */
+  --iv-density: 1;
+  --iv-radius-scale: 1;
+
+  /* ——— Sidebar ——— */
+  --iv-sidebar-w: 248px;
+  --iv-topbar-h: 56px;
+}
+
+/* Light theme — for portal toggle */
+[data-theme="light"] {
+  --iv-bg: #F8FAFC;
+  --iv-bg-elevated: #FFFFFF;
+  --iv-surface: #FFFFFF;
+  --iv-surface-2: #F1F5F9;
+  --iv-surface-3: #E2E8F0;
+  --iv-card: #FFFFFF;
+
+  --iv-border: rgba(15, 23, 42, 0.08);
+  --iv-border-strong: rgba(15, 23, 42, 0.14);
+  --iv-border-soft: rgba(15, 23, 42, 0.04);
+  --iv-divider: rgba(15, 23, 42, 0.06);
+
+  --iv-text: #0F172A;
+  --iv-text-muted: #475569;
+  --iv-text-dim: #64748B;
+  --iv-text-faint: #94A3B8;
+
+  --iv-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --iv-shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --iv-shadow-lg: 0 20px 60px -20px rgba(15, 23, 42, 0.18);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--iv-font-sans);
+  background: var(--iv-bg);
+  color: var(--iv-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  text-rendering: optimizeLegibility;
+}
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--iv-border-strong);
+  border-radius: 999px;
+  border: 2px solid var(--iv-bg);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--iv-text-faint); }
+
+/* Selection */
+::selection { background: rgba(79, 70, 229, 0.4); color: #fff; }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--iv-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.iv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  font-family: var(--iv-font-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  border-radius: var(--iv-r-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  user-select: none;
+  text-decoration: none;
+  line-height: 1;
+}
+.iv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.iv-btn-primary {
+  background: linear-gradient(180deg, #5B52E8 0%, #4338CA 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(79, 70, 229, 0.4);
+}
+.iv-btn-primary:hover {
+  background: linear-gradient(180deg, #6366F1 0%, #4F46E5 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 4px 14px -2px rgba(79, 70, 229, 0.45),
+    0 0 0 1px rgba(79, 70, 229, 0.5);
+  transform: translateY(-0.5px);
+}
+.iv-btn-primary:active { transform: translateY(0); }
+
+.iv-btn-secondary {
+  background: var(--iv-surface);
+  color: var(--iv-text);
+  border-color: var(--iv-border-strong);
+}
+.iv-btn-secondary:hover {
+  background: var(--iv-surface-2);
+  border-color: var(--iv-text-faint);
+}
+
+.iv-btn-ghost {
+  background: transparent;
+  color: var(--iv-text-muted);
+}
+.iv-btn-ghost:hover {
+  background: var(--iv-surface-2);
+  color: var(--iv-text);
+}
+
+.iv-btn-sm { height: 30px; padding: 0 10px; font-size: 12.5px; border-radius: var(--iv-r-sm); }
+.iv-btn-lg { height: 44px; padding: 0 20px; font-size: 14.5px; }
+
+/* ============================================================
+   Inputs
+   ============================================================ */
+.iv-input,
+.iv-select,
+.iv-textarea {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  font-family: var(--iv-font-sans);
+  font-size: 13.5px;
+  color: var(--iv-text);
+  background: var(--iv-surface);
+  border: 1px solid var(--iv-border-strong);
+  border-radius: var(--iv-r-md);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.iv-textarea {
+  height: auto;
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+.iv-input:focus,
+.iv-select:focus,
+.iv-textarea:focus {
+  border-color: var(--iv-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+.iv-input::placeholder,
+.iv-textarea::placeholder { color: var(--iv-text-faint); }
+
+.iv-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--iv-text-muted);
+  margin-bottom: 6px;
+  letter-spacing: -0.005em;
+}
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.iv-card {
+  background: var(--iv-card);
+  border: 1px solid var(--iv-border);
+  border-radius: var(--iv-r-lg);
+  position: relative;
+}
+.iv-card-hover {
+  transition: all 0.2s ease;
+}
+.iv-card-hover:hover {
+  border-color: var(--iv-border-strong);
+  background: var(--iv-surface-2);
+  transform: translateY(-2px);
+}
+
+/* ============================================================
+   Badges
+   ============================================================ */
+.iv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  font-family: var(--iv-font-sans);
+  border-radius: var(--iv-r-pill);
+  border: 1px solid transparent;
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+}
+.iv-badge-success { background: var(--iv-success-bg); color: var(--iv-success); border-color: rgba(34, 197, 94, 0.25); }
+.iv-badge-warning { background: var(--iv-warning-bg); color: var(--iv-warning); border-color: rgba(245, 158, 11, 0.25); }
+.iv-badge-error   { background: var(--iv-error-bg);   color: var(--iv-error);   border-color: rgba(239, 68, 68, 0.25); }
+.iv-badge-info    { background: var(--iv-info-bg);    color: var(--iv-info);    border-color: rgba(56, 189, 248, 0.25); }
+.iv-badge-neutral { background: var(--iv-surface-2);  color: var(--iv-text-muted); border-color: var(--iv-border); }
+.iv-badge-primary { background: rgba(79, 70, 229, 0.12); color: var(--iv-accent-soft); border-color: rgba(79, 70, 229, 0.3); }
+
+.iv-badge-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+.iv-badge-pulse::before {
+  animation: iv-pulse 2s ease-in-out infinite;
+}
+@keyframes iv-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
+  50% { opacity: 0.6; box-shadow: 0 0 0 4px transparent; }
+}
+
+/* ============================================================
+   Tables
+   ============================================================ */
+.iv-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.iv-table thead th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--iv-text-muted);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--iv-divider);
+  background: var(--iv-surface-2);
+}
+.iv-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--iv-divider);
+  color: var(--iv-text);
+  vertical-align: middle;
+}
+.iv-table tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
+[data-theme="light"] .iv-table tbody tr:hover td { background: rgba(15, 23, 42, 0.02); }
+.iv-table tbody tr:last-child td { border-bottom: 0; }
+
+/* ============================================================
+    Mobile table cards (responsive transformation)
+    ============================================================ */
+@media (max-width: 768px) {
+  .iv-table-responsive {
+    display: block;
+    width: 100%;
+  }
+  .iv-table-responsive thead {
+    display: none;
+  }
+  .iv-table-responsive tbody,
+  .iv-table-responsive tr,
+  .iv-table-responsive td {
+    display: block;
+    width: 100%;
+  }
+  .iv-table-responsive tr {
+    margin-bottom: 10px;
+    border: 1px solid var(--iv-border);
+    border-radius: var(--iv-r-md);
+    background: var(--iv-card);
+    overflow: hidden;
+  }
+  .iv-table-responsive td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--iv-divider);
+  }
+  .iv-table-responsive td:last-child {
+    border-bottom: 0;
+  }
+  .iv-table-responsive td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--iv-text-muted);
+  }
+}
+
+/* ============================================================
+   Decorative bg
+   ============================================================ */
+.iv-grid-bg {
+  background-image:
+    linear-gradient(to right, var(--iv-border-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--iv-border-soft) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* ============================================================
+   Atmospheric background — global, continuous, premium
+   Wraps landing in a single ambient layer; eliminates section cuts.
+   ============================================================ */
+.iv-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 1200px 700px at 50% -10%, rgba(139, 92, 246, 0.16), transparent 55%),
+    radial-gradient(ellipse 900px 600px at 85% 20%, rgba(79, 70, 229, 0.10), transparent 55%),
+    radial-gradient(ellipse 800px 500px at 15% 45%, rgba(99, 102, 241, 0.08), transparent 60%),
+    radial-gradient(ellipse 1000px 600px at 70% 75%, rgba(139, 92, 246, 0.07), transparent 55%),
+    linear-gradient(180deg, #07090E 0%, #090B14 35%, #0A0C16 65%, #07090E 100%);
+}
+.iv-atmosphere::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 1100px 800px at 50% 25%, black, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 1100px 800px at 50% 25%, black, transparent 75%);
+  opacity: 0.55;
+}
+.iv-atmosphere::after {
+  /* slow drifting glow */
+  content: '';
+  position: absolute;
+  width: 900px; height: 900px;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.18), transparent 60%);
+  filter: blur(60px);
+  animation: iv-drift 22s ease-in-out infinite alternate;
+  border-radius: 50%;
+}
+[data-theme="light"] .iv-atmosphere {
+  background:
+    radial-gradient(ellipse 1200px 700px at 50% -10%, rgba(139, 92, 246, 0.10), transparent 55%),
+    radial-gradient(ellipse 900px 600px at 85% 20%, rgba(79, 70, 229, 0.06), transparent 55%),
+    linear-gradient(180deg, #FAFBFD 0%, #F4F6FB 50%, #FAFBFD 100%);
+}
+[data-theme="light"] .iv-atmosphere::after { opacity: 0.4; }
+
+@keyframes iv-drift {
+  0%   { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-46%, 80px) scale(1.1); opacity: 0.85; }
+}
+
+/* Wraps landing content above the atmosphere */
+.iv-page { position: relative; z-index: 1; }
+.iv-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   Glow halos
+   ============================================================ */
+.iv-halo {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  opacity: 0.5;
+}
+.iv-halo-primary { background: radial-gradient(circle, var(--iv-primary), transparent 70%); }
+.iv-halo-accent  { background: radial-gradient(circle, var(--iv-accent), transparent 70%); }
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes iv-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes iv-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes iv-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.iv-fade-up { animation: iv-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.iv-fade-in { animation: iv-fade-in 0.6s ease both; }
+
+/* ============================================================
+   Premium motion library
+   ============================================================ */
+@keyframes iv-soft-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-8px) rotate(0.2deg); }
+}
+@keyframes iv-glow-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.05); }
+}
+@keyframes iv-shimmer-border {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 0 30px -5px rgba(139, 92, 246, 0.3); }
+  50%      { box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.4), 0 0 60px -10px rgba(139, 92, 246, 0.5); }
+}
+@keyframes iv-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes iv-slide-in-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes iv-slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes iv-hero-glow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(1.08); }
+}
+
+.iv-float       { animation: iv-soft-float 7s ease-in-out infinite; }
+.iv-glow-pulse  { animation: iv-glow-pulse 4s ease-in-out infinite; }
+.iv-scale-in    { animation: iv-scale-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.iv-hero-glow   { animation: iv-hero-glow 6s ease-in-out infinite; }
+
+/* IntersectionObserver-driven reveal */
+.iv-reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+.iv-reveal.iv-in { opacity: 1; transform: translateY(0); }
+
+/* Section continuity — soft fade dividers between landing sections */
+.iv-section { position: relative; padding: clamp(60px, 8vw, 120px) 0; }
+.iv-section + .iv-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 60%; max-width: 800px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.15), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.iv-stagger > * { opacity: 0; animation: iv-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.iv-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.iv-stagger > *:nth-child(2) { animation-delay: 0.12s; }
+.iv-stagger > *:nth-child(3) { animation-delay: 0.19s; }
+.iv-stagger > *:nth-child(4) { animation-delay: 0.26s; }
+.iv-stagger > *:nth-child(5) { animation-delay: 0.33s; }
+.iv-stagger > *:nth-child(6) { animation-delay: 0.40s; }
+.iv-stagger > *:nth-child(7) { animation-delay: 0.47s; }
+.iv-stagger > *:nth-child(8) { animation-delay: 0.54s; }
+
+/* ============================================================
+   Skeleton
+   ============================================================ */
+.iv-skeleton {
+  background: linear-gradient(90deg, var(--iv-surface-2) 0%, var(--iv-surface-3) 50%, var(--iv-surface-2) 100%);
+  background-size: 200% 100%;
+  animation: iv-shimmer 1.6s linear infinite;
+  border-radius: var(--iv-r-sm);
+}
+
+/* Caret for typewriter */
+.iv-caret {
+  display: inline-block;
+  width: 3px;
+  height: 0.95em;
+  vertical-align: -0.15em;
+  background: var(--iv-accent-soft);
+  margin-left: 4px;
+  animation: iv-blink 1s steps(1) infinite;
+  border-radius: 1px;
+  box-shadow: 0 0 12px var(--iv-accent);
+}
+@keyframes iv-blink {
+  50% { opacity: 0; }
+}
+
+/* Mono chip */
+.iv-chip-mono {
+  font-family: var(--iv-font-mono);
+  font-size: 11px;
+  padding: 2px 6px;
+  background: var(--iv-surface-2);
+  border: 1px solid var(--iv-border);
+  border-radius: var(--iv-r-xs);
+  color: var(--iv-text-muted);
+}
+
+/* Section headers */
+.iv-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--iv-font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--iv-accent-soft);
+  padding: 5px 12px 5px 10px;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: var(--iv-r-pill);
+  background: rgba(139, 92, 246, 0.06);
+}
+.iv-eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--iv-accent);
+  box-shadow: 0 0 10px var(--iv-accent);
+}
+
+/* Utility */
+.iv-divider-h { height: 1px; background: var(--iv-divider); border: 0; }
+.iv-mono { font-family: var(--iv-font-mono); }
+
+/* App container helpers */
+.iv-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 40px);
+}
+
+/* ============================================================
+   Responsive — landing comprehensive
+   ============================================================ */
+@media (max-width: 1024px) {
+  .iv-landing-nav { display: none !important; }
+  .iv-hero-grid { grid-template-columns: 1fr !important; }
+  .iv-vision-grid { grid-template-columns: 1fr !important; }
+  .iv-contact-grid { grid-template-columns: 1fr !important; }
+  .iv-footer-grid { grid-template-columns: 1fr 1fr !important; }
+  .iv-pricing-grid { grid-template-columns: 1fr !important; max-width: 480px !important; margin-inline: auto !important; }
+}
+
+@media (max-width: 768px) {
+  .iv-login-grid { grid-template-columns: 1fr !important; }
+  .iv-login-brand { display: none !important; }
+  .iv-dash-row { grid-template-columns: 1fr !important; }
+  .iv-section { padding: 56px 0 !important; }
+  .iv-footer-grid { grid-template-columns: 1fr !important; }
+  .iv-orders-kanban { grid-template-columns: 1fr !important; }
+  .iv-settings-grid { grid-template-columns: 1fr !important; }
+  .iv-mockup-wrap { transform: scale(0.85) !important; margin-top: 30px !important; }
+}
+
+@media (max-width: 480px) {
+  .iv-container { padding: 0 16px !important; }
+  .iv-mockup-wrap { transform: scale(0.7) !important; margin-top: 20px !important; }
+  .iv-hero-title { font-size: clamp(28px, 8vw, 40px) !important; }
+  .iv-header-inner { height: 56px !important; }
+}
+
+/* ============================================================
+   Responsive — portal (sidebar collapses on tablet, drawer on mobile)
+   ============================================================ */
+@media (max-width: 900px) {
+  .iv-portal-sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+  .iv-portal-sidebar.iv-open { transform: translateX(0); box-shadow: 0 30px 80px rgba(0,0,0,0.6); }
+  .iv-portal-main { margin-left: 0 !important; }
+  .iv-portal-topbar { left: 0 !important; padding-left: 16px !important; }
+  .iv-portal-mobile-toggle { display: inline-flex !important; }
+  .iv-portal-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .iv-dash-row { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 640px) {
+  .iv-portal-user-label { display: none !important; }
+  .iv-portal-search { display: none !important; }
+  .iv-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 480px) {
+  .iv-kpi-grid { grid-template-columns: 1fr !important; }
+  .iv-portal-topbar { padding: 0 12px !important; gap: 8px !important; }
+  .iv-portal-actions { flex-direction: column !important; width: 100%; }
+  .iv-portal-actions button { width: 100%; justify-content: center; }
+}
+
+.iv-portal-mobile-toggle { display: none; }
+
+/* ============================================================
+   Header premium glass
+   ============================================================ */
+.iv-header-glass {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(7, 9, 14, 0.72);
+  border-bottom: 1px solid var(--iv-border);
+  transition: all 0.25s ease;
+}
+[data-theme="light"] .iv-header-glass {
+  background: rgba(248, 250, 252, 0.82);
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+/* ============================================================
+   Mobile nav drawer (landing)
+   ============================================================ */
+.iv-mobile-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.iv-mobile-drawer.iv-open {
+  opacity: 1;
+  pointer-events: all;
+}
+.iv-mobile-drawer-panel {
+  position: absolute;
+  top: 0; right: 0;
+  width: min(320px, 85vw);
+  height: 100%;
+  background: var(--iv-bg-elevated);
+  border-left: 1px solid var(--iv-border);
+  padding: 20px;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.iv-mobile-drawer.iv-open .iv-mobile-drawer-panel {
+  transform: translateX(0);
+}
+
+/* ============================================================
+   Mockup wrapper — prevents visual cuts
+   ============================================================ */
+.iv-mockup-wrap {
+  position: relative;
+  margin-top: 60px;
+  margin-inline: auto;
+  max-width: 1100px;
+  transition: transform 0.3s ease;
+}
+.iv-mockup-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -60px;
+  border-radius: 32px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(79, 70, 229, 0.20), transparent 70%);
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ============================================================
+   Pricing featured card glow
+   ============================================================ */
+.iv-pricing-featured {
+  position: relative;
+}
+.iv-pricing-featured::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(79, 70, 229, 0.5), rgba(139, 92, 246, 0.2));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}

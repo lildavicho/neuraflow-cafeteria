@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="build-id" content="2026-05-04-v3" />
+  <title>InsightVision · Inteligencia para tu negocio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Fraunces:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/tokens.css?v=3" />
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+  <script>
+    (function() {
+      if (typeof Babel !== 'undefined' && Babel.disableScriptTags) {
+        Babel.disableScriptTags();
+      }
+      var ts = Date.now();
+      document.querySelectorAll('script[type="text/babel"]').forEach(function(s) {
+        if (s.src) {
+          s.src = s.src.replace(/\?[vt]=[^&]*/, '') + '?t=' + ts;
+        }
+      });
+      if (typeof Babel !== 'undefined' && Babel.transformScriptTags) {
+        window.addEventListener('DOMContentLoaded', function() {
+          Babel.transformScriptTags();
+        });
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div id="root">
+    <div style="padding:24px;color:white;background:#07090E;min-height:100vh;font-family:system-ui">
+      Cargando Insight Vision IA...
+    </div>
+  </div>
+  <div id="boot-error" style="display:none;padding:24px;color:#ef4444;background:#07090E;font-family:monospace;white-space:pre-wrap"></div>
+  <script>
+    window.addEventListener('error', function (event) {
+      var el = document.getElementById('boot-error');
+      if (el) {
+        el.style.display = 'block';
+        el.textContent =
+          'Error frontend: ' + event.message +
+          '\nArchivo: ' + event.filename +
+          '\nLinea: ' + event.lineno +
+          '\nColumna: ' + event.colno;
+      }
+    });
+
+    window.addEventListener('unhandledrejection', function (event) {
+      var el = document.getElementById('boot-error');
+      if (el) {
+        el.style.display = 'block';
+        el.textContent =
+          'Promise error: ' +
+          (event.reason && event.reason.message ? event.reason.message : event.reason);
+      }
+    });
+  </script>
+
+  <script type="text/babel" data-presets="react" src="src/icons.jsx?v=3"></script>
+  <script type="text/babel" data-presets="react" src="src/primitives.jsx?v=3"></script>
+  <script type="text/babel" data-presets="react" src="src/i18n.jsx?v=3"></script>
+  <script type="text/babel" data-presets="react" src="src/landing.jsx?v=3"></script>
+  <script type="text/babel" data-presets="react" src="src/login.jsx?v=3"></script>
+  <script type="text/babel" data-presets="react" src="src/portal-shell.jsx?v=3"></script>
+  <script type="text/babel" data-presets="react" src="src/portal-pages.jsx?v=3"></script>
+  <script type="text/babel" data-presets="react" src="src/tweaks-panel.jsx?v=3"></script>
+  <script type="text/babel" data-presets="react" src="src/app.jsx?v=3"></script>
+</body>
+</html>

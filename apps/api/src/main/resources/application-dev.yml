@@ -1,0 +1,68 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:ucacue;DB_CLOSE_DELAY=-1;MODE=MYSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: ${SHOW_SQL:false}
+  flyway:
+    enabled: false
+  h2:
+    console:
+      enabled: false
+  mvc:
+    servlet:
+      path: /api
+  data:
+    redis:
+      repositories:
+        enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 86400
+    refresh-expiration: 604800
+
+firebase:
+  enabled: false
+  auth-enabled: false
+  push-enabled: false
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+  project-id: ${FIREBASE_PROJECT_ID:}
+
+app:
+  public-tenant-registration-enabled: false
+  public-leads:
+    notify-to: soporte@insightvisionia.cloud
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    db:
+      enabled: false
+    mail:
+      enabled: false
+
+logging:
+  file:
+    name: C:/Sistema Bar Final/ucacue-bar-spring/ops/logs/api-dev.log
+

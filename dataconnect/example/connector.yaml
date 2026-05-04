@@ -1,0 +1,29 @@
+connectorId: example
+generate:
+  kotlinSdk:
+    - outputDir: ..\..\apps\api\src\main\kotlin
+      package: com.google.firebase.dataconnect.generated
+      clientCache: {}
+  adminNodeSdk:
+    - outputDir: ..\..\src\dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ..\..
+    - outputDir: ..\..\integrations\firebase-functions\src\dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ..\..\integrations\firebase-functions
+    - outputDir: ..\..\ops\migrate\sql\src\dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ..\..\ops\migrate\sql
+  javascriptSdk:
+    - outputDir: ..\..\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..
+      react: false
+      angular: false
+      clientCache: {}
+    - outputDir: ..\..\apps\web-angular\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..\apps\web-angular
+      react: false
+      angular: true
+      clientCache: {}

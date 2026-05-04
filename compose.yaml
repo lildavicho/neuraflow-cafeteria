@@ -1,0 +1,97 @@
+name: insightvision
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: insightvision-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: insightvision
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d insightvision"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      args:
+        BUILD_TIMESTAMP: "2026-05-03-001"
+    container_name: insightvision-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      PORT: 8080
+      DB_SCHEMA: bar_app
+      DATABASE_URL: jdbc:postgresql://postgres:5432/insightvision?sslmode=disable&currentSchema=bar_app,public
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@ucacue.edu.ec}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      JWT_SECRET: ${JWT_SECRET:-change_me_super_long_secret_min_64_chars_change_me_1234567890}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8081,http://localhost:4200,http://127.0.0.1:4200}
+      PUBLIC_TENANT_REGISTRATION_ENABLED: ${PUBLIC_TENANT_REGISTRATION_ENABLED:-false}
+      PUBLIC_LEADS_NOTIFY_TO: ${PUBLIC_LEADS_NOTIFY_TO:-soporte@insightvisionia.cloud}
+      VISION_RATE_LIMIT_PER_MINUTE: ${VISION_RATE_LIMIT_PER_MINUTE:-1800}
+      RESEND_ENABLED: ${RESEND_ENABLED:-true}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_BASE_URL: ${RESEND_BASE_URL:-https://api.resend.com}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-soporte@insightvisionia.cloud}
+      RESEND_FROM_NAME: ${RESEND_FROM_NAME:-Insight Vision IA}
+      RESEND_REPLY_TO: ${RESEND_REPLY_TO:-soporte@insightvisionia.cloud}
+      RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
+      FIREBASE_ENABLED: ${FIREBASE_ENABLED:-false}
+      FIREBASE_AUTH_ENABLED: ${FIREBASE_AUTH_ENABLED:-false}
+      FIREBASE_PUSH_ENABLED: ${FIREBASE_PUSH_ENABLED:-false}
+    ports:
+      - "8080:8080"
+    volumes:
+      - api_storage:/app/storage
+    develop:
+      watch:
+        - action: rebuild
+          path: ./apps/api/src
+        - action: rebuild
+          path: ./apps/api/pom.xml
+        - action: rebuild
+          path: ./apps/api/Dockerfile
+
+  web:
+    build:
+      context: ./apps/web-angular
+      dockerfile: Dockerfile
+      args:
+        BUILD_TIMESTAMP: "2026-05-03-001"
+    container_name: insightvision-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8081:80"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./apps/web-angular/src
+        - action: rebuild
+          path: ./apps/web-angular/public
+        - action: rebuild
+          path: ./apps/web-angular/package.json
+        - action: rebuild
+          path: ./apps/web-angular/package-lock.json
+        - action: rebuild
+          path: ./apps/web-angular/Dockerfile
+
+volumes:
+  postgres_data:
+  api_storage:

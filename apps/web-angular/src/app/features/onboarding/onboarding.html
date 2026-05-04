@@ -1,0 +1,529 @@
+<section class="onboarding" [style.--sri-primary]="brandColor()">
+  <header class="onboarding__hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Configuración guiada para Ecuador</span>
+      <h1>Deja tu negocio listo para vender y facturar</h1>
+      <p>
+        Responde preguntas simples sobre tu negocio. InsightVision configura SRI, numeración,
+        contabilidad, ventas, compras, inventario, firma electrónica y comprobantes por ti.
+      </p>
+    </div>
+    <div class="hero-status">
+      <span class="status-dot" [class.status-dot--published]="session()?.status === 'PUBLISHED'"></span>
+      <strong>{{ session()?.status || 'DRAFT' }}</strong>
+      <small>{{ saveState() }}</small>
+    </div>
+  </header>
+
+  <div class="wizard-grid">
+    <aside class="stepper" aria-label="Pasos del onboarding">
+      <div class="stepper__head">
+        <strong>{{ session()?.tenantName || 'Negocio' }}</strong>
+        <span>{{ session()?.tenantCode || 'negocio' }}</span>
+      </div>
+      <div class="progress"><span [style.width.%]="session()?.progressPercent || 0"></span></div>
+      <small class="progress-copy">{{ session()?.progressPercent || 0 }}% listo</small>
+
+      <nav>
+        @for (step of steps; track step.key; let index = $index) {
+          <button
+            type="button"
+            class="step"
+            [class.step--active]="activeStepKey() === step.key"
+            [class.step--done]="stepCompleted(step.key)"
+            (click)="setActiveStep(step.key)"
+          >
+            <span class="step__index">{{ index + 1 }}</span>
+            <span>
+              <strong>{{ step.short }}</strong>
+              <small>{{ step.title }}</small>
+            </span>
+          </button>
+        }
+      </nav>
+    </aside>
+
+    <main class="workbench">
+      @if (loading()) {
+        <section class="workbench__empty">
+          <span></span>
+          <h2>Cargando configuración</h2>
+          <p>Preparando catálogos SRI, negocio y estado de la configuración.</p>
+        </section>
+      } @else {
+        <header class="workbench__header">
+          <div>
+            <span class="eyebrow">Paso {{ activeStepIndex() + 1 }} de {{ steps.length }}</span>
+            <h2>{{ activeStep().title }}</h2>
+            <p>{{ activeStep().description }}</p>
+          </div>
+          <button type="button" class="btn btn--quiet" [disabled]="saving()" (click)="saveActiveStep(true)">
+            Guardar paso
+          </button>
+        </header>
+
+        @if (feedback(); as message) {
+          <p class="feedback">{{ message }}</p>
+        }
+
+        @switch (activeStepKey()) {
+          @case ('business-discovery') {
+            <section class="form-grid">
+              <div class="helper-card field--wide">
+                <strong>Elige la opción más parecida a tu actividad.</strong>
+                <p>La lista cubre comercio, servicios, salud, educación, turismo, transporte, agro, producción, organizaciones y actividades personalizadas. Si tu negocio no aparece, usa "Otra actividad".</p>
+              </div>
+              <label class="field field--wide">
+                <span>¿A qué se dedica tu negocio?</span>
+                <select [ngModel]="field('verticalTemplate')" (ngModelChange)="setField('verticalTemplate', $event)">
+                  @for (vertical of catalogItems('verticalTemplates'); track vertical.itemCode) {
+                    <option [value]="vertical.itemCode">{{ vertical.label }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field field--wide">
+                <span>Si elegiste otra actividad, escríbela aquí</span>
+                <input placeholder="Ej: estudio fotográfico, consultorio veterinario, imprenta..." [ngModel]="field('customActivity')" (ngModelChange)="setField('customActivity', $event)" />
+              </label>
+              <label class="field">
+                <span>¿A quién vendes principalmente?</span>
+                <select [ngModel]="field('businessMode')" (ngModelChange)="setField('businessMode', $event)">
+                  <option value="b2c">Público general</option>
+                  <option value="b2b">Empresas o instituciones</option>
+                  <option value="mixed">Ambos</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>¿Cuántos locales o puntos de venta tienes?</span>
+                <input type="number" min="1" [ngModel]="field('branches') || '1'" (ngModelChange)="setField('branches', $event)" />
+              </label>
+              <label class="switch-line">
+                <input type="checkbox" [ngModel]="boolField('usesPos')" (ngModelChange)="setField('usesPos', $event)" />
+                <span>Uso caja rápida o mostrador</span>
+              </label>
+              <label class="switch-line">
+                <input type="checkbox" [ngModel]="boolField('importsGoods')" (ngModelChange)="setField('importsGoods', $event)" />
+                <span>Compro mercadería o importo productos</span>
+              </label>
+              <label class="switch-line">
+                <input type="checkbox" [ngModel]="boolField('needsRecurringBilling')" (ngModelChange)="setField('needsRecurringBilling', $event)" />
+                <span>Cobro mensualidades, pensiones o servicios recurrentes</span>
+              </label>
+            </section>
+          }
+
+          @case ('legal-entity') {
+            <section class="form-grid">
+              <label class="field">
+                <span>RUC del negocio</span>
+                <input maxlength="13" inputmode="numeric" placeholder="0100000000001" [ngModel]="field('ruc')" (ngModelChange)="setField('ruc', $event)" (blur)="validateRuc()" />
+              </label>
+              <label class="field">
+                <span>¿En tu RUC dice obligado a llevar contabilidad?</span>
+                <select [ngModel]="field('obligatedAccounting') || 'NO'" (ngModelChange)="setField('obligatedAccounting', $event)">
+                  <option value="SI">SÍ</option>
+                  <option value="NO">NO</option>
+                </select>
+              </label>
+              <label class="field field--wide">
+                <span>Razón social</span>
+                <input [ngModel]="field('legalName')" (ngModelChange)="setField('legalName', $event)" />
+              </label>
+              <label class="field field--wide">
+                <span>Nombre comercial</span>
+                <input [ngModel]="field('tradeName')" (ngModelChange)="setField('tradeName', $event)" />
+              </label>
+              <label class="field field--wide">
+                <span>Dirección matriz registrada en el SRI</span>
+                <textarea rows="3" [ngModel]="field('matrixAddress')" (ngModelChange)="setField('matrixAddress', $event)"></textarea>
+              </label>
+              <label class="field field--wide">
+                <span>Direccion del local o punto de emision si cambia de la matriz</span>
+                <input [ngModel]="field('establishmentAddress')" (ngModelChange)="setField('establishmentAddress', $event)" />
+                <small class="field-note">Si lo dejas vacio, el sistema usara la direccion matriz en el SRI.</small>
+              </label>
+              <label class="field">
+                <span>Correo para enviar comprobantes</span>
+                <input type="email" [ngModel]="field('email')" (ngModelChange)="setField('email', $event)" />
+              </label>
+              <label class="field">
+                <span>Teléfono</span>
+                <input [ngModel]="field('phone')" (ngModelChange)="setField('phone', $event)" />
+              </label>
+            </section>
+          }
+
+          @case ('tax-profile') {
+            <div class="helper-card helper-card--soft">
+              <strong>No necesitas saber contabilidad.</strong>
+              <p>Marca solo lo que aparece en tu RUC o en una resolución del SRI. Si no estás seguro, déjalo apagado y el contador lo puede revisar después.</p>
+            </div>
+            <section class="decision-grid">
+              @for (flag of catalogItems('fiscalFlags'); track flag.itemCode) {
+                <button type="button" class="decision" [class.decision--on]="boolField(flag.itemCode)" (click)="setField(flag.itemCode, !boolField(flag.itemCode))">
+                  <strong>{{ flag.label }}</strong>
+                  <span>{{ fiscalHelp(flag.itemCode) }}</span>
+                </button>
+              }
+            </section>
+            <section class="form-grid form-grid--compact">
+              @if (boolField('rimpe')) {
+                <label class="field">
+                  <span>Si eres RIMPE, que tipo aparece?</span>
+                  <select [ngModel]="field('rimpeType')" (ngModelChange)="setField('rimpeType', $event)">
+                    <option value="">Selecciona una opcion</option>
+                    <option value="entrepreneur">Emprendedor</option>
+                    <option value="popular">Negocio popular</option>
+                  </select>
+                </label>
+              }
+              @if (boolField('retentionAgent') || boolField('retention_agent')) {
+                <label class="field">
+                  <span>Numero de resolucion si eres agente de retencion</span>
+                  <input [ngModel]="field('retentionResolution')" (ngModelChange)="setField('retentionResolution', $event)" />
+                  <small class="field-note">Este dato solo va si el SRI ya te emitio la resolucion.</small>
+                </label>
+              }
+              @if (boolField('special_taxpayer')) {
+                <label class="field">
+                  <span>Numero de resolucion de contribuyente especial</span>
+                  <input [ngModel]="field('specialTaxpayerResolution')" (ngModelChange)="setField('specialTaxpayerResolution', $event)" />
+                  <small class="field-note">Si en tu RUC o resolucion consta contribuyente especial, este campo es obligatorio.</small>
+                </label>
+              }
+              <label class="switch-line switch-line--warning field--wide">
+                <input type="checkbox" [ngModel]="boolField('withholdsVat100BySectorOnly')" (ngModelChange)="setField('withholdsVat100BySectorOnly', $event)" />
+                <span>Mi contador confirmo una retencion 100% IVA para casos especificos</span>
+              </label>
+            </section>
+          }
+
+          @case ('certificate-connectivity') {
+            <section class="form-grid">
+              <div class="helper-card field--wide">
+                <strong>Sube tu firma electrónica una sola vez.</strong>
+                <p>El archivo .p12 se guarda en el backend del negocio. La clave se cifra y no viaja al navegador después de guardarla.</p>
+              </div>
+              <label class="field">
+                <span>¿Dónde quieres empezar?</span>
+                <select [ngModel]="field('environment') || '1'" (ngModelChange)="setField('environment', $event)">
+                  <option value="1">Pruebas SRI</option>
+                  <option value="2">Producción SRI</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Alias del certificado (opcional)</span>
+                <input [ngModel]="field('certificateAlias')" (ngModelChange)="setField('certificateAlias', $event)" />
+              </label>
+              <label class="field">
+                <span>Archivo de firma electrónica .p12</span>
+                <input type="file" accept=".p12,application/x-pkcs12" (change)="selectCertificate($event)" />
+                @if (certificateFile(); as certFile) {
+                  <small class="file-note">{{ certFile.name }}</small>
+                }
+              </label>
+              <label class="field">
+                <span>Clave de la firma</span>
+                <input type="password" autocomplete="new-password" [ngModel]="certificatePassword()" (ngModelChange)="certificatePassword.set($event)" />
+              </label>
+              <div class="field field--wide">
+                <button type="button" class="btn btn--primary" [disabled]="certificateUploading()" (click)="uploadCertificate()">
+                  Guardar firma electrónica del negocio
+                </button>
+                @if (boolField('hasP12') || boolField('p12StoredInTenant')) {
+                  <p class="success-note">Firma guardada para este negocio. El flujo SRI ya puede usarla al facturar.</p>
+                }
+              </div>
+              <label class="switch-line">
+                <input type="checkbox" [ngModel]="boolField('signatureTestPassed')" (ngModelChange)="setField('signatureTestPassed', $event)" />
+                <span>Ya hice una prueba de firma correctamente</span>
+              </label>
+              <label class="switch-line">
+                <input type="checkbox" [ngModel]="boolField('authorizationPollingPassed')" (ngModelChange)="setField('authorizationPollingPassed', $event)" />
+                <span>Ya probé envío y autorización con el SRI</span>
+              </label>
+            </section>
+          }
+
+          @case ('emission-points') {
+            <section class="form-grid">
+              <label class="field"><span>Código de local SRI</span><input maxlength="3" inputmode="numeric" [ngModel]="field('establishmentCode') || '001'" (ngModelChange)="setField('establishmentCode', $event)" /></label>
+              <label class="field"><span>Caja o punto de emisión</span><input maxlength="3" inputmode="numeric" [ngModel]="field('emissionPointCode') || '001'" (ngModelChange)="setField('emissionPointCode', $event)" /></label>
+              <label class="field"><span>Primer número de comprobante</span><input maxlength="9" inputmode="numeric" [ngModel]="field('invoiceCurrentNumber') || '000000001'" (ngModelChange)="setField('invoiceCurrentNumber', $event)" /></label>
+              <div class="field field--wide">
+                <span>¿Qué comprobantes necesitas emitir?</span>
+                <div class="chip-grid">
+                  @for (doc of catalogItems('documentTypes'); track doc.itemCode) {
+                    <button type="button" class="chip chip--catalog" [class.chip--on]="arrayHas('enabledDocuments', doc.itemCode)" (click)="toggleArrayValue('enabledDocuments', doc.itemCode)">
+                      <span class="chip__code">{{ doc.itemCode }}</span>
+                      <span class="chip__label">{{ doc.label }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            </section>
+          }
+
+          @case ('accounting-template') {
+            <section class="form-grid">
+              <label class="field">
+                <span>Base contable sugerida</span>
+                <select [ngModel]="field('coaTemplate') || 'EC_NIIF_BASE'" (ngModelChange)="setField('coaTemplate', $event)">
+                  <option value="EC_NIIF_BASE">Plan general para Ecuador</option>
+                  <option value="EC_RETAIL">Comercio, tienda o distribuidora</option>
+                  <option value="EC_RESTAURANT">Restaurante, bar o cafetería</option>
+                  <option value="EC_EDUCATION">Colegio, cursos o servicios educativos</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>¿Cómo valoras tu inventario?</span>
+                <select [ngModel]="field('costingMethod') || 'AVCO'" (ngModelChange)="setField('costingMethod', $event)">
+                  <option value="AVCO">Promedio ponderado</option>
+                  <option value="FIFO">Primero entra, primero sale</option>
+                </select>
+              </label>
+              <div class="field field--wide">
+                <span>¿Cómo quieres separar tus reportes?</span>
+                <div class="chip-grid">
+                  @for (dimension of dimensionOptions; track dimension) {
+                    <button type="button" class="chip" [class.chip--on]="arrayHas('dimensions', dimension)" (click)="toggleArrayValue('dimensions', dimension)">{{ dimensionLabel(dimension) }}</button>
+                  }
+                </div>
+              </div>
+            </section>
+          }
+
+          @case ('sales-pos') {
+            <section class="form-grid">
+              <label class="field"><span>Nombre de tu lista de precios</span><input [ngModel]="field('defaultPricelist') || 'Precio público'" (ngModelChange)="setField('defaultPricelist', $event)" /></label>
+              <label class="field">
+                <span>¿Vendes a crédito?</span>
+                <select [ngModel]="field('creditPolicy') || 'cash-first'" (ngModelChange)="setField('creditPolicy', $event)">
+                  <option value="cash-first">Contado primero</option>
+                  <option value="soft-credit">Crédito con alerta</option>
+                  <option value="hard-limit">Bloqueo por límite</option>
+                </select>
+              </label>
+              <div class="field field--wide">
+                <span>¿Cómo te pagan tus clientes?</span>
+                <div class="chip-grid">
+                  @for (method of catalogItems('paymentMethods'); track method.itemCode) {
+                    <button type="button" class="chip chip--catalog" [class.chip--on]="arrayHas('paymentMethods', method.itemCode)" (click)="toggleArrayValue('paymentMethods', method.itemCode)">
+                      <span class="chip__code">{{ method.itemCode }}</span>
+                      <span class="chip__label">{{ method.label }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+              <label class="switch-line"><input type="checkbox" [ngModel]="boolField('tipsEnabled')" (ngModelChange)="setField('tipsEnabled', $event)" /><span>Restaurante: propinas / servicio</span></label>
+              <label class="switch-line"><input type="checkbox" [ngModel]="boolField('identifyCustomerRequired')" (ngModelChange)="setField('identifyCustomerRequired', $event)" /><span>Identificar cliente antes de facturar</span></label>
+            </section>
+          }
+
+          @case ('purchases') {
+            <section class="form-grid">
+              <label class="field"><span>Tipo de compra más común</span><input [ngModel]="field('defaultTaxSupport') || 'Compras locales'" (ngModelChange)="setField('defaultTaxSupport', $event)" /></label>
+              <label class="field">
+                <span>Retención común en servicios</span>
+                <select [ngModel]="field('serviceRetentionDefault') || '70'" (ngModelChange)="setField('serviceRetentionDefault', $event)">
+                  <option value="30">30% IVA</option>
+                  <option value="70">70% IVA</option>
+                  <option value="100">100% IVA con condición</option>
+                </select>
+              </label>
+              <label class="switch-line"><input type="checkbox" [ngModel]="boolField('supplierAuthorizationRequired')" (ngModelChange)="setField('supplierAuthorizationRequired', $event)" /><span>Guardar autorización de facturas de proveedores</span></label>
+              <label class="switch-line"><input type="checkbox" [ngModel]="boolField('purchaseApprovalEnabled')" (ngModelChange)="setField('purchaseApprovalEnabled', $event)" /><span>Alguien debe aprobar compras antes de pagarlas</span></label>
+            </section>
+          }
+
+          @case ('inventory') {
+            <section class="form-grid">
+              <label class="field"><span>¿Cuántas bodegas o lugares de stock tienes?</span><input type="number" min="1" [ngModel]="field('warehouseCount') || '1'" (ngModelChange)="setField('warehouseCount', $event)" /></label>
+              <label class="field">
+                <span>¿Cómo entregas tus productos?</span>
+                <select [ngModel]="field('dispatchPolicy') || 'stock-first'" (ngModelChange)="setField('dispatchPolicy', $event)">
+                  <option value="stock-first">Vender stock disponible</option>
+                  <option value="reserve-first">Reservar antes de entregar</option>
+                  <option value="cross-dock">Entrega directa sin almacenar</option>
+                </select>
+              </label>
+              <label class="switch-line"><input type="checkbox" [ngModel]="boolField('lotsEnabled')" (ngModelChange)="setField('lotsEnabled', $event)" /><span>Necesito lotes, caducidad o series</span></label>
+              <label class="switch-line"><input type="checkbox" [ngModel]="boolField('barcodesEnabled')" (ngModelChange)="setField('barcodesEnabled', $event)" /><span>Uso códigos de barra o scanner</span></label>
+              <label class="switch-line"><input type="checkbox" [ngModel]="boolField('replenishmentEnabled')" (ngModelChange)="setField('replenishmentEnabled', $event)" /><span>Quiero alertas cuando falte stock</span></label>
+            </section>
+          }
+
+          @case ('crm-hr-bi') {
+            <section class="decision-grid decision-grid--large">
+              @for (module of growthModules; track module.key) {
+                <button type="button" class="decision" [class.decision--on]="boolField(module.key)" (click)="setField(module.key, !boolField(module.key))">
+                  <strong>{{ module.title }}</strong>
+                  <span>{{ module.detail }}</span>
+                </button>
+              }
+            </section>
+          }
+
+          @case ('brand-studio') {
+            <section class="brand-layout">
+              <div class="form-grid form-grid--single">
+                <div class="helper-card">
+                  <strong>Esto no es una factura real.</strong>
+                  <p>Es una muestra visual para escoger logo, colores y estilo. Los datos legales del SRI siempre se bloquean automáticamente.</p>
+                </div>
+                <label class="field"><span>Color principal de tu marca</span><input type="color" [ngModel]="field('primaryColor') || '#4F46E5'" (ngModelChange)="setField('primaryColor', $event)" /></label>
+                <label class="field"><span>Color de apoyo</span><input type="color" [ngModel]="field('accentColor') || '#8B5CF6'" (ngModelChange)="setField('accentColor', $event)" /></label>
+                <label class="field">
+                  <span>Estilo del comprobante</span>
+                  <select [ngModel]="field('template') || 'Classic'" (ngModelChange)="setField('template', $event)">
+                    <option value="Classic">Clásico legal</option>
+                    <option value="Modern">Moderno limpio</option>
+                    <option value="Minimal">Minimalista</option>
+                  </select>
+                </label>
+                <div class="upload-box">
+                  <label class="field">
+                    <span>Logo del negocio</span>
+                    <input type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" (change)="previewLogo($event)" />
+                  </label>
+                  <p class="upload-help">Formato: PNG, JPG o WebP. Tamaño ideal: 600x300 px, relación 2:1 o 3:1, fondo transparente si es posible. Máximo 1.5MB.</p>
+                  @if (logoFile(); as currentLogo) {
+                    <small class="file-note">{{ currentLogo.name }} - se previsualiza al instante.</small>
+                  }
+                  <button type="button" class="btn btn--quiet" [disabled]="logoUploading()" (click)="uploadLogo()">
+                    Guardar logo del negocio
+                  </button>
+                  @if (field('logoStoragePath')) {
+                    <p class="success-note">Logo guardado para los comprobantes.</p>
+                  }
+                </div>
+                <div class="upload-box">
+                  <label class="field">
+                    <span>Si ya tienes un modelo de factura, súbelo aquí</span>
+                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" (change)="selectRideReference($event)" />
+                  </label>
+                  <p class="upload-help">Aceptamos PDF, PNG, JPG, Word o captura de pantalla. Máximo 5MB. Sirve como referencia visual para adaptar colores, orden y estilo.</p>
+                  @if (rideReferenceFile(); as refFile) {
+                    <small class="file-note">{{ refFile.name }}</small>
+                  }
+                </div>
+                <div class="field field--wide">
+                  <button type="button" class="btn btn--quiet" [disabled]="rideReferenceUploading()" (click)="uploadRideReference()">
+                    Guardar modelo como referencia
+                  </button>
+                  @if (field('customRideReferenceFileName')) {
+                    <p class="success-note">Modelo guardado: {{ field('customRideReferenceFileName') }}</p>
+                  }
+                </div>
+                <label class="field field--wide"><span>Mensaje al pie del comprobante</span><textarea rows="3" [ngModel]="field('footerNote')" (ngModelChange)="setField('footerNote', $event)"></textarea></label>
+                <label class="switch-line"><input type="checkbox" [ngModel]="boolField('legalSafeMode')" (ngModelChange)="setField('legalSafeMode', $event)" /><span>Proteger QR, clave de acceso, RUC y leyendas SRI</span></label>
+              </div>
+              <div class="ride-paper ride-paper--large">
+                <span class="sample-tag">Muestra visual</span>
+                <ng-container [ngTemplateOutlet]="ridePreview"></ng-container>
+              </div>
+            </section>
+          }
+
+          @case ('publish-review') {
+            <section class="publish-panel">
+              <div>
+                <span class="eyebrow">Lista crítica</span>
+                <h3>Antes de empezar a vender</h3>
+                <p>El negocio se activa cuando tiene RUC, firma, numeración, cuentas, ventas, compras, inventario y comprobante configurados.</p>
+              </div>
+              <div class="checklist">
+                @for (item of checklistRows(); track item.key) {
+                  <div class="checklist__row" [class.checklist__row--done]="item.done">
+                    <span>{{ item.done ? 'OK' : 'PEND' }}</span>
+                    <strong>{{ item.label }}</strong>
+                  </div>
+                }
+              </div>
+              <button type="button" class="btn btn--primary btn--publish" [disabled]="publishing()" (click)="publish()">Activar negocio</button>
+            </section>
+          }
+        }
+      }
+    </main>
+
+    <aside class="context-rail">
+      <section class="rail-block rail-block--summary">
+        <span class="eyebrow">Esto configura</span>
+        <h3>{{ activeStep().short }}</h3>
+        <div class="module-tags">
+          @for (module of activeStep().moduleImpact; track module) {
+            <span>{{ module }}</span>
+          }
+        </div>
+      </section>
+
+      <section class="rail-block">
+        <span class="eyebrow">Alertas</span>
+        @if (session()?.warnings?.length) {
+          @for (warning of session()?.warnings || []; track warning.title) {
+            <article class="warning">
+              <strong>{{ warning.title }}</strong>
+              <p>{{ warning.detail }}</p>
+            </article>
+          }
+        } @else {
+          <p class="muted">Sin alertas críticas por ahora.</p>
+        }
+      </section>
+
+      <section class="rail-block rail-block--guide">
+        <span class="eyebrow">Ten a mano</span>
+        <ul class="help-list">
+          @for (item of helpItems(); track item) {
+            <li>{{ item }}</li>
+          }
+        </ul>
+      </section>
+
+      @if (activeStepKey() === 'brand-studio') {
+        <section class="rail-block rail-block--ride">
+          <span class="eyebrow">Muestra visual</span>
+          <div class="ride-paper"><ng-container [ngTemplateOutlet]="ridePreview"></ng-container></div>
+        </section>
+      }
+    </aside>
+  </div>
+
+  <ng-template #ridePreview>
+    <div class="ride-preview">
+      <header class="ride-preview__head">
+        <div class="ride-preview__logo">
+          @if (logoSrc()) {
+            <img [src]="logoSrc()" alt="Logo del negocio" />
+          } @else {
+            <strong>{{ initials() }}</strong>
+          }
+        </div>
+        <div>
+          <strong>{{ legalValue('tradeName') || session()?.tenantName || 'InsightVision Demo' }}</strong>
+          <span>{{ legalValue('ruc') || '0100000000001' }}</span>
+          <span>Matriz: {{ legalValue('matrixAddress') || 'Cuenca, Ecuador' }}</span>
+        </div>
+      </header>
+      <section class="ride-preview__security">
+        <div>
+          <span>Clave de acceso</span>
+          <strong>0101202601010000000001123456789000000000112345678</strong>
+        </div>
+        <div class="qr-mock" aria-label="QR preview"></div>
+      </section>
+      <table>
+        <thead><tr><th>Concepto</th><th>Cant.</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr><td>Servicio principal</td><td>1</td><td>$ 10.00</td></tr>
+          <tr><td>Producto gravado IVA 15%</td><td>2</td><td>$ 20.00</td></tr>
+        </tbody>
+      </table>
+      <footer>
+        <span>IVA 15% código 4</span>
+        <strong>Total a pagar $ 34.50</strong>
+      </footer>
+    </div>
+  </ng-template>
+</section>

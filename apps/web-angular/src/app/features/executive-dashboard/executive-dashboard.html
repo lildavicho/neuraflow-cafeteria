@@ -1,0 +1,454 @@
+<section class="dashboard">
+  <header class="dashboard__header">
+    <div class="dashboard__intro">
+      <span class="dashboard__eyebrow">Centro de mando</span>
+      <h1 class="dashboard__title">Asi se mueve el negocio hoy</h1>
+      <p class="dashboard__copy">
+        El tablero ejecutivo concentra ventas, utilidad, ordenes, riesgos operativos y tareas
+        urgentes en una vista limpia para decidir rapido.
+      </p>
+    </div>
+
+    <div class="dashboard__actions">
+      <div class="dashboard__stamp">
+        <span class="dashboard__stamp-label">Ultima actualizacion</span>
+        <strong>{{ snapshot()?.generatedAt | date: 'short' }}</strong>
+      </div>
+
+      <div class="dashboard__toolbar">
+        <span class="dashboard__theme-chip">
+          {{ themeService.isDark ? 'Modo oscuro' : 'Modo claro' }}
+        </span>
+        <button type="button" class="page__button page__button--primary" [disabled]="loading()" (click)="load(true)">
+          {{ loading() ? 'Actualizando...' : 'Actualizar dashboard' }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  @if (feedback(); as notice) {
+    <app-request-feedback
+      [tone]="notice.tone"
+      [message]="notice.message"
+      [traceId]="notice.traceId"
+    />
+  }
+
+  @if (loading()) {
+    <div class="dashboard__loading">
+      <app-skeleton-cards [count]="5" />
+      <div class="dashboard__loading-grid">
+        <div class="dashboard__loading-panel skeleton"></div>
+        <div class="dashboard__loading-panel dashboard__loading-panel--side skeleton"></div>
+      </div>
+      <div class="dashboard__loading-grid dashboard__loading-grid--bottom">
+        <div class="dashboard__loading-card skeleton"></div>
+        <div class="dashboard__loading-card skeleton"></div>
+        <div class="dashboard__loading-card skeleton"></div>
+      </div>
+    </div>
+  } @else if (snapshot(); as view) {
+    <section class="dashboard__kpis">
+      @for (card of kpiCards(); track card.label) {
+        <article class="kpi-card" [attr.data-accent]="card.accent">
+          <div class="kpi-card__icon">
+            @switch (card.icon) {
+              @case ('revenue') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 12h12M12 6v12M4.5 8.25h15M4.5 15.75h15" />
+                </svg>
+              }
+              @case ('profit') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l4.5-4.5 3 3 7.5-7.5" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 6h5.25v5.25" />
+                </svg>
+              }
+              @case ('orders') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h10.5M6.75 12h10.5M6.75 17.25h6.75" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 4.5h15v15h-15z" />
+                </svg>
+              }
+              @case ('ticket') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5h13.5v9h-13.5z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 10.5h7.5M8.25 13.5h4.5" />
+                </svg>
+              }
+              @default {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v4.5m0 3.75h.008v.008H12v-.008z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.29 3.86L1.82 18a2.25 2.25 0 001.93 3.375h16.5A2.25 2.25 0 0022.18 18L13.71 3.86a1.97 1.97 0 00-3.42 0z" />
+                </svg>
+              }
+            }
+          </div>
+
+          <div class="kpi-card__body">
+            <span class="kpi-card__label">{{ card.label }}</span>
+            <strong class="kpi-card__value">
+              @switch (card.kind) {
+                @case ('currency') {
+                  {{ card.value | currency: 'USD' : 'symbol' : card.digits }}
+                }
+                @default {
+                  {{ card.value | number: card.digits }}
+                }
+              }
+            </strong>
+
+            @if (card.delta !== null && card.delta !== undefined) {
+              <span class="kpi-card__delta" [attr.data-tone]="metricTone(card.delta)">
+                {{ card.delta >= 0 ? '+' : '' }}{{ card.delta | number: '1.1-1' }}% vs ayer
+              </span>
+            } @else {
+              <span class="kpi-card__hint">{{ card.helper }}</span>
+            }
+          </div>
+        </article>
+      }
+    </section>
+
+    <section class="dashboard-grid dashboard-grid--hero">
+      <article class="panel panel--trend">
+        <header class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Cashflow</span>
+            <h2>{{ chartMode() === 'sales' ? 'Tendencia de ingresos' : 'Tendencia de utilidad' }}</h2>
+          </div>
+
+          <div class="segmented">
+            <button
+              type="button"
+              class="segmented__button"
+              [class.segmented__button--active]="chartMode() === 'sales'"
+              (click)="setChartMode('sales')"
+            >
+              Ventas
+            </button>
+            <button
+              type="button"
+              class="segmented__button"
+              [class.segmented__button--active]="chartMode() === 'profit'"
+              (click)="setChartMode('profit')"
+            >
+              Utilidad
+            </button>
+          </div>
+        </header>
+
+        <div class="trend__summary">
+          <div>
+            <strong>{{ chartHeadlineValue() | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
+            <span [attr.data-tone]="metricTone(chartHeadlineDelta())">
+              {{ chartHeadlineDelta() >= 0 ? '+' : '' }}{{ chartHeadlineDelta() | number: '1.1-1' }}% vs ayer
+            </span>
+          </div>
+          <small>{{ trendCaption() }}</small>
+        </div>
+
+        @if (activeTrendPoints().length >= 2) {
+          <app-line-chart [points]="activeTrendPoints()" />
+        } @else {
+          <p class="page__state">Todavia no hay datos suficientes para graficar una tendencia util.</p>
+        }
+      </article>
+
+      <article class="panel panel--mix">
+        <header class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Revenue Mix</span>
+            <h2>Ingresos por producto destacado</h2>
+          </div>
+        </header>
+
+        <div class="mix__headline">
+          <strong>{{ topRevenueTotal() | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
+          <span [attr.data-tone]="metricTone(view.comparacionVentas.deltaPorcentaje)">
+            {{ view.comparacionVentas.deltaPorcentaje >= 0 ? '+' : '' }}{{ view.comparacionVentas.deltaPorcentaje | number: '1.1-1' }}% vs ayer
+          </span>
+        </div>
+
+        @if (productMix().length) {
+          <div class="mix__bars">
+            @for (item of productMix(); track item.name) {
+              <div class="mix__bar-track">
+                <span class="mix__bar-fill" [style.width.%]="item.share"></span>
+              </div>
+            }
+          </div>
+
+          <div class="mix__list">
+            @for (item of productMix(); track item.name) {
+              <article class="mix__item">
+                <div>
+                  <strong>{{ item.name }}</strong>
+                  <small>{{ item.quantity }} uds. vendidas</small>
+                </div>
+                <div class="mix__meta">
+                  <strong>{{ item.revenue | currency: 'USD' : 'symbol' : '1.0-0' }}</strong>
+                  <span>{{ item.share | number: '1.0-0' }}%</span>
+                </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="page__state">Aun no hay suficiente mezcla de ventas para construir este bloque.</p>
+        }
+      </article>
+    </section>
+
+    <section class="dashboard-grid dashboard-grid--secondary">
+      <article class="panel panel--health">
+        <header class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Operacion</span>
+            <h2>Radar operativo</h2>
+          </div>
+        </header>
+
+        <div class="health">
+          <div class="health__ring">
+            <div class="health__ring-chart" [style.background]="healthRingStyle()"></div>
+            <div class="health__ring-center">
+              <strong>{{ healthIssueTotal() }}</strong>
+              <span>frentes activos</span>
+            </div>
+          </div>
+
+          <div class="health__legend">
+            @for (segment of healthSegments(); track segment.label) {
+              <div class="health__legend-row">
+                <span class="health__legend-label">
+                  <i [attr.data-tone]="segment.tone"></i>
+                  {{ segment.label }}
+                </span>
+                <strong>{{ segment.count }}</strong>
+              </div>
+            }
+          </div>
+        </div>
+      </article>
+
+      <article class="panel panel--agenda">
+        <header class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Agenda</span>
+            <h2>Foco del dia</h2>
+          </div>
+        </header>
+
+        <div class="agenda__days">
+          @for (day of timelineDays(); track day.date) {
+            <button type="button" class="agenda__day" [class.agenda__day--active]="day.active">
+              <span>{{ day.weekday }}</span>
+              <strong>{{ day.day }}</strong>
+            </button>
+          }
+        </div>
+
+        <div class="agenda__list">
+          @for (item of agendaItems(); track item.title) {
+            <article class="agenda__item" [attr.data-tone]="item.tone">
+              <div class="agenda__item-copy">
+                <strong>{{ item.title }}</strong>
+                <p>{{ item.detail }}</p>
+              </div>
+              <span class="agenda__item-meta">{{ item.meta }}</span>
+            </article>
+          }
+        </div>
+      </article>
+
+      <article class="panel panel--leaders">
+        <header class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Top line</span>
+            <h2>Ranking por ingresos</h2>
+          </div>
+        </header>
+
+        @if (topRevenueBars().length) {
+          <div class="leaders">
+            @for (item of topRevenueBars(); track item.name) {
+              <article class="leaders__item">
+                <div class="leaders__meta">
+                  <strong>{{ item.name }}</strong>
+                  <span>{{ item.revenue | currency: 'USD' : 'symbol' : '1.0-0' }}</span>
+                </div>
+                <div class="leaders__track">
+                  <span [style.width.%]="item.width"></span>
+                </div>
+                <small>{{ item.quantity }} uds. · utilidad {{ item.profit | currency: 'USD' : 'symbol' : '1.0-0' }}</small>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="page__state">Todavia no hay suficiente volumen para construir un ranking confiable.</p>
+        }
+      </article>
+    </section>
+
+    <article class="panel panel--summary">
+      <header class="panel__header">
+        <div>
+          <span class="panel__eyebrow">Resumen</span>
+          <h2>{{ view.resumenNegocio.title }}</h2>
+        </div>
+      </header>
+
+      <div class="summary">
+        <p class="summary__copy">{{ view.resumenNegocio.detail }}</p>
+
+        <div class="summary__metrics">
+          <article class="summary__metric">
+            <span>Cuentas por cobrar</span>
+            <strong>{{ view.cuentasPorCobrarAbiertas }}</strong>
+            <small>casos en cartera</small>
+          </article>
+          <article class="summary__metric">
+            <span>Cuentas por pagar</span>
+            <strong>{{ view.cuentasPorPagarAbiertas }}</strong>
+            <small>obligaciones abiertas</small>
+          </article>
+          <article class="summary__metric">
+            <span>SRI pendientes</span>
+            <strong>{{ view.documentosSriPendientes }}</strong>
+            <small>envio o revision</small>
+          </article>
+          <article class="summary__metric">
+            <span>Transferencias</span>
+            <strong>{{ view.pagosTransferenciaPendientes.length }}</strong>
+            <small>confirmacion pendiente</small>
+          </article>
+        </div>
+      </div>
+    </article>
+
+    <section class="dashboard-grid dashboard-grid--details">
+      <article class="panel">
+        <header class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Inventario</span>
+            <h2>Stock critico</h2>
+          </div>
+          <span class="panel__count">{{ view.productosBajoStock.length }}</span>
+        </header>
+
+        @if (view.productosBajoStock.length) {
+          <div class="stack-list">
+            @for (product of view.productosBajoStock.slice(0, 5); track product.id) {
+              <article class="stack-item stack-item--danger">
+                <strong>{{ product.name }}</strong>
+                <small>Disponible {{ product.availableStock }} / minimo {{ product.minStock }}</small>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="page__state">No hay productos por debajo del minimo operativo.</p>
+        }
+      </article>
+
+      <article class="panel">
+        <header class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Facturacion</span>
+            <h2>SRI reciente</h2>
+          </div>
+          <span class="panel__count">{{ view.documentosSriRecientes.length }}</span>
+        </header>
+
+        @if (view.documentosSriRecientes.length) {
+          <div class="stack-list">
+            @for (document of view.documentosSriRecientes.slice(0, 5); track document.id) {
+              <article class="stack-item">
+                <strong>{{ document.documentCode }} {{ document.sequentialNumber || 'sin secuencial' }}</strong>
+                <small>{{ document.status }} · {{ document.total | currency: 'USD' : 'symbol' : '1.2-2' }}</small>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="page__state">No hay documentos recientes para mostrar en este bloque.</p>
+        }
+      </article>
+
+      <article class="panel">
+        <header class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Tesoreria</span>
+            <h2>Transferencias pendientes</h2>
+          </div>
+          <span class="panel__count">{{ view.pagosTransferenciaPendientes.length }}</span>
+        </header>
+
+        @if (view.pagosTransferenciaPendientes.length) {
+          <div class="stack-list">
+            @for (payment of view.pagosTransferenciaPendientes.slice(0, 5); track payment.id) {
+              <article class="stack-item">
+                <strong>#{{ payment.id }} · {{ payment.userName || payment.userEmail || 'Cliente' }}</strong>
+                <small>
+                  {{ payment.total | currency: 'USD' : 'symbol' : '1.2-2' }}
+                  @if (payment.paymentReference) {
+                    · Ref {{ payment.paymentReference }}
+                  }
+                </small>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="page__state">No hay pagos por transferencia esperando validacion.</p>
+        }
+      </article>
+
+      <article class="panel">
+        <header class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Insights</span>
+            <h2>Recomendaciones accionables</h2>
+          </div>
+          <span class="panel__count">{{ view.insights.length }}</span>
+        </header>
+
+        @if (view.insights.length) {
+          <div class="insight-list">
+            @for (insight of view.insights.slice(0, 4); track insight.title) {
+              <article class="insight-card">
+                <strong>{{ insight.title }}</strong>
+                <p>{{ insight.explanation }}</p>
+                <small>{{ insight.actionRecommended }}</small>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="page__state">Todavia no hay recomendaciones accionables para este momento.</p>
+        }
+      </article>
+
+      <article class="panel">
+        <header class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Alertas</span>
+            <h2>Senales visibles</h2>
+          </div>
+          <span class="panel__count">{{ view.alertas.length }}</span>
+        </header>
+
+        @if (view.alertas.length) {
+          <div class="alerts">
+            @for (alert of view.alertas.slice(0, 4); track alert.title) {
+              <article class="alert-card" [attr.data-tone]="alertTone(alert.level)">
+                <strong>{{ alert.title }}</strong>
+                <p>{{ alert.detail }}</p>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="page__state">No hay alertas activas. La operacion luce estable.</p>
+        }
+      </article>
+    </section>
+  } @else {
+    <p class="page__state">Todavia no hay datos listos para construir el tablero ejecutivo.</p>
+  }
+</section>

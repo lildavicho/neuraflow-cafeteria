@@ -11,9 +11,11 @@ USE ucacue_erp;
 -- ==========================================================
 -- APP USER
 -- ==========================================================
-CREATE USER IF NOT EXISTS 'ucacue_user'@'%' IDENTIFIED BY 'ucacue_pass';
-GRANT ALL PRIVILEGES ON ucacue_erp.* TO 'ucacue_user'@'%';
-FLUSH PRIVILEGES;
+-- Cree el usuario de aplicacion fuera de este script con una contrasena unica.
+-- Ejemplo:
+-- CREATE USER IF NOT EXISTS 'ucacue_user'@'%' IDENTIFIED BY '<strong-password>';
+-- GRANT ALL PRIVILEGES ON ucacue_erp.* TO 'ucacue_user'@'%';
+-- FLUSH PRIVILEGES;
 
 -- ==========================================================
 -- TABLA SYNC_OUTBOX CORREGIDA

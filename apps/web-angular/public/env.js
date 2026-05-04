@@ -11,5 +11,11 @@
         : '/api';
   }
 
+  runtimeEnv.publicAppName = runtimeEnv.publicAppName || 'Insight Vision IA';
+  runtimeEnv.publicSupportEmail = runtimeEnv.publicSupportEmail || 'soporte@insightvisionia.cloud';
+  runtimeEnv.publicEnableGoogleLogin = false;
+  runtimeEnv.publicEnableMicrosoftLogin = false;
+  runtimeEnv.firebase = runtimeEnv.firebase || {};
+
   window.__env = runtimeEnv;
 })();

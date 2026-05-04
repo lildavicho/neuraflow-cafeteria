@@ -8,28 +8,31 @@ spring:
       path: ${CONTEXT_PATH:/api}
 
   datasource:
-    url: ${DB_URL:jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:bar_escolar}?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=America/Guayaquil&createDatabaseIfNotExist=true}
-    username: ${DB_USER:ucacue_user}
-    password: ${DB_PASS:ucacue_pass}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:postgres}?sslmode=${DB_SSL_MODE:require}&currentSchema=${DB_SCHEMA:bar_app},public}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+    driver-class-name: ${DB_DRIVER_CLASS_NAME:org.postgresql.Driver}
     hikari:
-      connection-timeout: 20000
-      maximum-pool-size: 10
-      minimum-idle: 5
-      idle-timeout: 300000
+      connection-init-sql: SET search_path TO ${DB_SCHEMA:bar_app}, public
+      pool-name: UcacueBarSupabasePool
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:20000}
+      validation-timeout: ${DB_POOL_VALIDATION_TIMEOUT_MS:5000}
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:8}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT_MS:120000}
+      max-lifetime: ${DB_POOL_MAX_LIFETIME_MS:1200000}
+      keepalive-time: ${DB_POOL_KEEPALIVE_TIME_MS:300000}
 
   jpa:
     hibernate:
       ddl-auto: none
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        default_schema: ${DB_SCHEMA:bar_app}
         format_sql: ${SHOW_SQL:false}
+        default_batch_fetch_size: ${HIBERNATE_DEFAULT_BATCH_FETCH_SIZE:50}
         jdbc:
           time_zone: UTC
-        connection:
-          characterEncoding: UTF-8
-          useUnicode: true
     show-sql: ${SHOW_SQL:false}
     open-in-view: false
   http:
@@ -40,10 +43,12 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
-    locations: classpath:db/migration
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration/postgresql}
+    default-schema: ${DB_SCHEMA:bar_app}
+    schemas: ${DB_SCHEMA:bar_app}
   data:
     redis:
-      host: ${REDIS_HOST:redis}
+      host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 2000
@@ -51,9 +56,9 @@ spring:
         enabled: false
   cache:
     type: caffeine
-    cache-names: firebase-tokens, products-public
+    cache-names: firebase-tokens, products-list, products-public, products-low-stock, dashboard-snapshots, sales-reports, sri-health, ride-template, accounting-reference, tenant-plans, cash-register-active
     caffeine:
-      spec: maximumSize=1000,expireAfterWrite=60s
+      spec: ${CACHE_SPEC:maximumSize=5000,expireAfterWrite=10m,recordStats}
 
   # mail deshabilitado
 
@@ -64,14 +69,18 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,text/css,text/javascript,application/javascript
   servlet:
     context-path: /
     encoding:
       charset: UTF-8
       force: true
   error:
-    include-message: always
-    include-binding-errors: always
+    include-message: never
+    include-binding-errors: never
 
 security:
   jwt:
@@ -86,7 +95,9 @@ jwt:
 firebase:
   project-id: ${FIREBASE_PROJECT_ID:}
   service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
-  enabled: ${FIREBASE_ENABLED:true}
+  enabled: ${FIREBASE_ENABLED:false}
+  auth-enabled: ${FIREBASE_AUTH_ENABLED:false}
+  push-enabled: ${FIREBASE_PUSH_ENABLED:false}
 
 payment:
   payphone:
@@ -110,24 +121,40 @@ management:
       enabled: false
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
 logging:
   level:
-    com.ucacue.bar: ${LOG_LEVEL:DEBUG}
-    org.springframework.security: DEBUG
+    com.ucacue.bar: ${LOG_LEVEL:INFO}
+    org.springframework.security: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 springdoc:
   api-docs:
+    enabled: ${SPRINGDOC_ENABLED:false}
     path: /v3/api-docs
   swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:false}
     path: /swagger-ui.html
 
 app:
-  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://localhost:8090,http://127.0.0.1:8090}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:${ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://localhost:8090,http://127.0.0.1:8090,http://localhost:5173,http://127.0.0.1:5173}}
+  public-tenant-registration-enabled: ${PUBLIC_TENANT_REGISTRATION_ENABLED:false}
+  public-leads:
+    notify-to: ${PUBLIC_LEADS_NOTIFY_TO:soporte@insightvisionia.cloud}
+  dashboard:
+    snapshot:
+      persistent-cache-enabled: ${DASHBOARD_SNAPSHOT_PERSISTENT_CACHE_ENABLED:true}
+      precompute-enabled: ${DASHBOARD_SNAPSHOT_PRECOMPUTE_ENABLED:true}
+      ttl-seconds: ${DASHBOARD_SNAPSHOT_TTL_SECONDS:60}
+      initial-delay-ms: ${DASHBOARD_SNAPSHOT_INITIAL_DELAY_MS:20000}
+      refresh-delay-ms: ${DASHBOARD_SNAPSHOT_REFRESH_DELAY_MS:45000}
+  performance:
+    reports-cache-evict-ms: ${REPORTS_CACHE_EVICT_MS:300000}
+    slow-request-threshold-ms: ${SLOW_REQUEST_THRESHOLD_MS:1500}
+    query-count-enabled: ${QUERY_COUNT_ENABLED:false}
   loyalty:
     points-per-dollar: ${LOYALTY_POINTS_PER_DOLLAR:1}
   sri:
@@ -140,6 +167,31 @@ app:
       pkcs12-path: ${SRI_PKCS12_PATH:}
       pkcs12-password: ${SRI_PKCS12_PASSWORD:}
       key-alias: ${SRI_KEY_ALIAS:}
+      password-master-key: ${SRI_SIGNATURE_PASSWORD_MASTER_KEY:}
+    ride:
+      storage-path: ${SRI_RIDE_STORAGE_PATH:storage/sri/ride}
+      storage-provider: ${SRI_RIDE_STORAGE_PROVIDER:LOCAL}
+      public-base-url: ${SRI_RIDE_PUBLIC_BASE_URL:}
+      supabase-url: ${SUPABASE_URL:}
+      supabase-service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
+      supabase-bucket: ${SRI_RIDE_SUPABASE_BUCKET:facturas-sri}
+      default-sender: ${SRI_RIDE_DEFAULT_SENDER:soporte@insightvisionia.cloud}
+      default-sender-name: ${SRI_RIDE_DEFAULT_SENDER_NAME:Insight Vision IA}
+      email-enabled: ${SRI_RIDE_EMAIL_ENABLED:true}
+      central-relay-enabled: ${SRI_RIDE_CENTRAL_RELAY_ENABLED:true}
+      signed-url-ttl-seconds: ${SRI_RIDE_SIGNED_URL_TTL_SECONDS:3600}
+      resend:
+        enabled: ${RESEND_ENABLED:true}
+        api-key: ${RESEND_API_KEY:}
+        base-url: ${RESEND_BASE_URL:https://api.resend.com}
+        from-email: ${RESEND_FROM_EMAIL:soporte@insightvisionia.cloud}
+        from-name: ${RESEND_FROM_NAME:Insight Vision IA}
+        reply-to: ${RESEND_REPLY_TO:soporte@insightvisionia.cloud}
+        webhook-secret: ${RESEND_WEBHOOK_SECRET:}
+        connect-timeout-ms: ${RESEND_CONNECT_TIMEOUT_MS:5000}
+        read-timeout-ms: ${RESEND_READ_TIMEOUT_MS:15000}
+        max-attachment-bytes: ${RESEND_MAX_ATTACHMENT_BYTES:10000000}
+        max-total-attachment-bytes: ${RESEND_MAX_TOTAL_ATTACHMENT_BYTES:20000000}
     test:
       reception-url: ${SRI_TEST_RECEPTION_URL:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline}
       authorization-url: ${SRI_TEST_AUTHORIZATION_URL:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline}

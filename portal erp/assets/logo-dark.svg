@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 100" fill="none" role="img" aria-label="InsightVision Enterprise AI">
+  
+  <g transform="translate(10, 10)">
+    
+    <path d="M40 8L15 20V40C15 58 25 70 40 76C55 70 65 58 65 40V20L40 8Z" stroke="#6366F1" stroke-width="3" stroke-linejoin="round" fill="#6366F1" fill-opacity="0.1"></path>
+    
+    <path d="M40 8L15 20V40C15 58 25 70 40 76" stroke="#A78BFA" stroke-width="1" stroke-linejoin="round" opacity="0.7"></path>
+
+    
+    <circle cx="40" cy="42" r="12" stroke="#818CF8" stroke-width="2.5"></circle>
+    <circle cx="40" cy="42" r="4" fill="#818CF8"></circle>
+
+    
+    <path d="M25 42L35 42" stroke="#818CF8" stroke-width="2" stroke-dasharray="2 2"></path>
+    <path d="M45 42L55 42" stroke="#818CF8" stroke-width="2" stroke-dasharray="2 2"></path>
+    <path d="M40 27L40 37" stroke="#818CF8" stroke-width="2" stroke-dasharray="2 2"></path>
+    <path d="M40 47L40 57" stroke="#818CF8" stroke-width="2" stroke-dasharray="2 2"></path>
+  </g>
+
+  
+  <g font-family="&#39;Inter&#39;, &#39;Segoe UI&#39;, system-ui, -apple-system, sans-serif">
+    <text x="105" y="52" font-size="34" font-weight="700" fill="#E5E5E5" letter-spacing="-0.5">
+      InsightVision
+    </text>
+    <text x="106" y="75" font-size="13" font-weight="600" fill="#60A5FA" letter-spacing="2.6">
+      ENTERPRISE AI
+    </text>
+  </g>
+</svg>

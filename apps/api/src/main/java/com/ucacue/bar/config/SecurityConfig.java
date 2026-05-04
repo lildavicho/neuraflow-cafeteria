@@ -36,7 +36,7 @@ public class SecurityConfig {
     @Autowired
     private com.ucacue.bar.security.RateLimitingFilter rateLimitingFilter;
 
-    @Value("${app.allowed-origins:http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://localhost:8090}")
+    @Value("${app.allowed-origins:${CORS_ALLOWED_ORIGINS:${ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://localhost:8090,http://localhost:5173,http://127.0.0.1:5173}}}")
     private String allowedOriginsCsv;
 
     @Bean
@@ -63,14 +63,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/pages/**", "/css/**", "/js/**", "/images/**", "/assets/**")
                         .permitAll()
                         .requestMatchers("/auth/**", "/api/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/public/leads", "/api/public/leads").permitAll()
                         .requestMatchers("/actuator/health", "/health").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/vision/events", "/api/vision/events").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/integrations/resend/webhook", "/api/integrations/resend/webhook").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/products/public", "/api/products/public").permitAll()
 
                         // --- ADMIN ONLY ---
                         .requestMatchers("/users/**", "/inventory/**", "/reports/**", "/camera/**",
-                                "/settings/**", "/dashboard/metrics/sse", "/people-counts/**", "/vision-ai/**")
+                                "/settings/**", "/dashboard/metrics/sse", "/people-counts/**", "/vision-ai/**",
+                                "/audit/**")
                         .hasRole("ADMIN")
 
                         // --- WebSocket ---
@@ -86,7 +89,6 @@ public class SecurityConfig {
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.deny())
                         .xssProtection(xss -> xss.disable())
-                        .contentTypeOptions(content -> content.disable())
                         .addHeaderWriter(new StaticHeadersWriter("X-Content-Type-Options", "nosniff"))
                         .addHeaderWriter(new StaticHeadersWriter("Content-Security-Policy",
                                 buildContentSecurityPolicy(allowedOrigins))))
@@ -116,11 +118,12 @@ public class SecurityConfig {
             configuration.setAllowedOriginPatterns(originPatterns);
         }
         if (exactOrigins.isEmpty() && originPatterns.isEmpty()) {
-            configuration.addAllowedOriginPattern("*");
+            throw new IllegalStateException("Debe configurar ALLOWED_ORIGINS para habilitar CORS con credenciales");
         }
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept",
-                "Origin", "Cache-Control", "Pragma", "X-Tenant-Code", "X-Trace-Id"));
+                "Origin", "Cache-Control", "Pragma", "X-Tenant-Code", "X-Trace-Id", "X-Vision-Api-Key",
+                "Idempotency-Key"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition", "Link", "Location",
                 "X-Tenant-Code", "X-Trace-Id"));
         configuration.setAllowCredentials(true);
@@ -145,7 +148,11 @@ public class SecurityConfig {
                 "https://identitytoolkit.googleapis.com",
                 "https://securetoken.googleapis.com",
                 "https://accounts.google.com",
+                "https://www.google.com",
                 "https://www.googleapis.com",
+                "https://www.gstatic.com",
+                "https://login.microsoftonline.com",
+                "https://*.microsoftonline.com",
                 "https://firebasestorage.googleapis.com");
 
         List<String> wsSources = allowedOrigins.stream()
@@ -166,12 +173,13 @@ public class SecurityConfig {
                 .collect(Collectors.joining(" "));
 
         return "default-src 'self'; " +
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com https://accounts.google.com https://unpkg.com; "
+                "script-src 'self' https://cdn.jsdelivr.net https://www.gstatic.com https://www.google.com https://apis.google.com https://accounts.google.com https://login.microsoftonline.com; "
                 +
                 "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
                 "font-src 'self' https://fonts.gstatic.com data:; " +
                 "img-src 'self' data: https:; " +
                 "connect-src " + connectSrc + "; " +
-                "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com";
+                "frame-src 'self' https://accounts.google.com https://www.google.com https://www.gstatic.com https://*.firebaseapp.com https://login.microsoftonline.com https://*.microsoftonline.com; " +
+                "object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
     }
 }

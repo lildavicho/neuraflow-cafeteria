@@ -1,119 +1,93 @@
-// sync-ultimate.js - Versión definitiva
+import 'dotenv/config';
 import { createPool } from 'mysql2/promise';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import fs from 'fs';
 
-console.log('🚀 SINCRONIZACIÓN ULTIMATE - UCACUE ERP');
-console.log('========================================');
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value || value.trim() === '') {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
 
-// Configuración directa (sin .env para evitar problemas)
 const pool = createPool({
-  host: '127.0.0.1',
-  port: 3310,
-  user: 'ucacue_user', 
-  password: 'ucacue_pass',
-  database: 'ucacue_erp'
+  host: process.env.DB_HOST || '127.0.0.1',
+  port: Number.parseInt(process.env.DB_PORT || '3310', 10),
+  user: requireEnv('DB_USER'),
+  password: requireEnv('DB_PASS'),
+  database: requireEnv('DB_NAME'),
+  connectionLimit: Number.parseInt(process.env.DB_POOL_LIMIT || '5', 10)
 });
 
-// Firebase
-const serviceAccount = JSON.parse(fs.readFileSync('./serviceAccount.json', 'utf8'));
-if (!getApps().length) initializeApp({ credential: cert(serviceAccount) });
+const serviceAccountPath = requireEnv('GOOGLE_APPLICATION_CREDENTIALS');
+const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+if (!getApps().length) {
+  initializeApp({ credential: cert(serviceAccount) });
+}
 const firestore = getFirestore();
+const pollIntervalMs = Number.parseInt(process.env.SYNC_POLL_INTERVAL_MS || '2000', 10);
 
-console.log('✅ Todas las conexiones establecidas\n');
+console.log('Realtime sync started');
 
 async function sync() {
   let cycle = 0;
-  
+
   while (true) {
-    cycle++;
+    cycle += 1;
     try {
-      // Consulta SIMPLE Y DIRECTA
       const [rows] = await pool.execute(
         "SELECT id, entity_type, entity_id, op_type, payload FROM sync_outbox WHERE status = 'PENDING' LIMIT 10"
       );
-      
-      if (rows.length > 0) {
-        console.log(`📦 CICLO ${cycle}: ${rows.length} REGISTROS PENDIENTES`);
-        console.log('─────────────────────────────────────');
-        
-        for (const row of rows) {
-          console.log(`   🔄 [${row.id}] ${row.entity_type}.${row.entity_id} (${row.op_type})`);
-          
-          try {
-            // Procesar payload de manera SEGURA
-            let data = {};
-            if (row.payload) {
-              try {
-                if (Buffer.isBuffer(row.payload)) {
-                  data = JSON.parse(row.payload.toString('utf8'));
-                } else {
-                  data = JSON.parse(row.payload);
-                }
-              } catch (e) {
-                data = { _raw_data: 'Could not parse payload' };
-              }
+
+      for (const row of rows) {
+        try {
+          let data = {};
+          if (row.payload) {
+            try {
+              data = JSON.parse(Buffer.isBuffer(row.payload) ? row.payload.toString('utf8') : row.payload);
+            } catch {
+              data = { _raw_data: 'Could not parse payload' };
             }
-            
-            // Firestore
-            const docRef = firestore.collection(row.entity_type).doc(row.entity_id.toString());
-            
-            if (row.op_type === 'DELETE') {
-              await docRef.delete();
-              console.log(`   ✅ ELIMINADO`);
-            } else {
-              await docRef.set(data, { merge: true });
-              console.log(`   ✅ SINCRONIZADO`);
-            }
-            
-            // Marcar como completado
-            await pool.execute(
-              "UPDATE sync_outbox SET status = 'DONE', processed_at = NOW() WHERE id = ?",
-              [row.id]
-            );
-            
-          } catch (error) {
-            console.log(`   ❌ ERROR: ${error.message}`);
-            await pool.execute(
-              "UPDATE sync_outbox SET status = 'ERROR' WHERE id = ?",
-              [row.id]
-            );
           }
-        }
-        console.log('─────────────────────────────────────\n');
-      } else {
-        if (cycle === 1 || cycle % 5 === 0) {
-          console.log(`⏳ CICLO ${cycle}: Esperando cambios...`);
-          
-          // Estadísticas rápidas
-          const [pending] = await pool.execute("SELECT COUNT(*) as count FROM sync_outbox WHERE status = 'PENDING'");
-          const [total] = await pool.execute("SELECT COUNT(*) as count FROM sync_outbox");
-          
-          console.log(`   📊 Sync Outbox: ${pending[0].count}/${total[0].count} pendientes`);
-          
-          if (pending[0].count === 0 && cycle > 5) {
-            console.log('   💡 PRUEBA: Ejecuta en MySQL: UPDATE products SET price = 2.50 WHERE id = 101;');
+
+          const docRef = firestore.collection(row.entity_type).doc(row.entity_id.toString());
+          if (row.op_type === 'DELETE') {
+            await docRef.delete();
+          } else {
+            await docRef.set(data, { merge: true });
           }
+
+          await pool.execute(
+            "UPDATE sync_outbox SET status = 'DONE', processed_at = NOW() WHERE id = ?",
+            [row.id]
+          );
+          console.log(`[${cycle}] synced ${row.entity_type}.${row.entity_id}`);
+        } catch (error) {
+          console.error(`[${cycle}] row ${row.id} failed:`, error.message);
+          await pool.execute("UPDATE sync_outbox SET status = 'ERROR' WHERE id = ?", [row.id]);
         }
       }
-      
-      // Esperar 2 segundos
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
+      if (rows.length === 0 && (cycle === 1 || cycle % 5 === 0)) {
+        const [pending] = await pool.execute("SELECT COUNT(*) as count FROM sync_outbox WHERE status = 'PENDING'");
+        const [total] = await pool.execute("SELECT COUNT(*) as count FROM sync_outbox");
+        console.log(`[${cycle}] waiting for changes; pending ${pending[0].count}/${total[0].count}`);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
     } catch (error) {
-      console.log('❌ Error general:', error.message);
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      console.error('sync loop failed:', error.message);
+      await new Promise(resolve => setTimeout(resolve, Math.max(pollIntervalMs, 5000)));
     }
   }
 }
 
-// Manejo de cierre
 process.on('SIGINT', async () => {
-  console.log('\n🛑 Sincronización detenida');
+  console.log('Realtime sync stopped');
   await pool.end();
   process.exit(0);
 });
 
 sync();
-

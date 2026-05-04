@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>InsightVision Enterprise AI</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07090e">
+  <meta name="color-scheme" content="dark light">
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <script>
+    /* ANTI-FLASH: aplica el tema y el fondo oscuro antes de que Angular
+       arranque para que el usuario nunca vea el fondo claro/crema mientras
+       carga el bundle. */
+    (function () {
+      try {
+        var stored = localStorage.getItem('erp-theme');
+        var path = (location.pathname || '/').toLowerCase();
+        var publicRoutes = [
+          '/', '/login', '/forgot-password', '/precios', '/demo',
+          '/contacto', '/funcionalidades', '/vision-ai',
+          '/facturacion-electronica', '/register'
+        ];
+        var isPublic = publicRoutes.indexOf(path) !== -1 || path === '';
+        var theme = (stored === 'dark' || stored === 'light')
+          ? stored
+          : (isPublic
+              ? 'dark'
+              : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+
+  <style>
+    /* Pre-Angular paint: mantiene el fondo oscuro en las rutas públicas
+       para que no haya destello blanco antes de que se aplique el CSS de
+       los componentes. */
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100dvh;
+      background: #07090e;
+      color: #f8fafc;
+      font-family: 'Sora', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    html[data-theme='light'] body {
+      background: #f8fafc;
+      color: #1f2933;
+    }
+    /* Booting splash que se ve idéntico al fondo del landing — evita el
+       parpadeo de un layout claro mientras se descargan los chunks. */
+    .iv-boot {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(ellipse 1100px 700px at 50% -10%, rgba(139, 92, 246, 0.18), transparent 55%),
+        radial-gradient(ellipse 900px 600px at 85% 20%, rgba(79, 70, 229, 0.12), transparent 55%),
+        linear-gradient(180deg, #07090e 0%, #090b14 50%, #07090e 100%);
+      color: #c4b5fd;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      z-index: 9999;
+      transition: opacity 320ms ease;
+    }
+    .iv-boot.iv-boot--gone { opacity: 0; pointer-events: none; }
+    .iv-boot__inner { display: grid; place-items: center; gap: 18px; }
+    .iv-boot__ring {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid rgba(167, 139, 250, 0.18);
+      border-top-color: #a78bfa;
+      animation: iv-boot-spin 0.9s linear infinite;
+    }
+    @keyframes iv-boot-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .iv-boot__ring { animation: none; }
+    }
+  </style>
+
+  <script src="env.js?v=20260503-iv-design"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="iv-boot" class="iv-boot" role="status" aria-live="polite">
+    <div class="iv-boot__inner">
+      <span class="iv-boot__ring" aria-hidden="true"></span>
+      <span>Cargando InsightVision IA</span>
+    </div>
+  </div>
+
+  <app-root></app-root>
+
+  <div id="boot-error" style="display:none;padding:24px;color:#ef4444;background:#07090E;font-family:monospace;white-space:pre-wrap"></div>
+
+  <script>
+    /* Quita el splash en cuanto Angular haya pintado el primer componente. */
+    var bootEl = document.getElementById('iv-boot');
+    var hideBoot = function () {
+      if (!bootEl) return;
+      bootEl.classList.add('iv-boot--gone');
+      window.setTimeout(function () { bootEl && bootEl.parentNode && bootEl.parentNode.removeChild(bootEl); }, 360);
+    };
+    var observer;
+    var maybeHide = function () {
+      var root = document.querySelector('app-root');
+      if (root && root.children && root.children.length > 0) {
+        hideBoot();
+        if (observer) observer.disconnect();
+        return true;
+      }
+      return false;
+    };
+    if (!maybeHide() && 'MutationObserver' in window) {
+      observer = new MutationObserver(maybeHide);
+      observer.observe(document.querySelector('app-root') || document.body, {
+        childList: true,
+        subtree: true,
+      });
+    }
+    /* Tope de seguridad por si el bundle falla en cargar. */
+    window.setTimeout(hideBoot, 8000);
+
+    window.addEventListener('error', function (event) {
+      var el = document.getElementById('boot-error');
+      if (el) {
+        el.style.display = 'block';
+        el.textContent =
+          'Error frontend: ' + event.message +
+          '\nArchivo: ' + event.filename +
+          '\nLinea: ' + event.lineno +
+          '\nColumna: ' + event.colno;
+      }
+    });
+
+    window.addEventListener('unhandledrejection', function (event) {
+      var el = document.getElementById('boot-error');
+      if (el) {
+        el.style.display = 'block';
+        el.textContent =
+          'Promise error: ' +
+          (event.reason && event.reason.message ? event.reason.message : event.reason);
+      }
+    });
+  </script>
+</body>
+</html>

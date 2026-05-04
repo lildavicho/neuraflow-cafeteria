@@ -15,7 +15,7 @@ import java.util.Arrays;
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${app.allowed-origins:http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://localhost:8090}")
+    @Value("${app.allowed-origins:http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://localhost:8090,http://localhost:5173,http://127.0.0.1:5173}")
     private String allowedOriginsCsv;
 
     private final WebSocketAuthChannelInterceptor authChannelInterceptor;

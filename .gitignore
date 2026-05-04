@@ -29,5 +29,35 @@ firebase-debug.log
 
 # Logs y configuraciones temporales
 *.log
+logs/
 *.env
+.env
+.env.*
+!.env.example
+!.env.template
+*credentials*.json
+*serviceAccount*.json
+*firebase-adminsdk*.json
+firebase-service-account*.json
+service-account*.json
+credentials*.json
+serviceAccount.local.json
+*.pem
+*.key
+*.p12
+*.jks
+*.dump
+*.backup
+*.bak
+*.old
+*.orig
+uploads/
+storage/
+rides/
+tmp/
+temp/
+.docker-data/
+docker-data/
+postgres-data/
 .DS_Store
+Thumbs.db

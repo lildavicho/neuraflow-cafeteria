@@ -4,13 +4,15 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+    hikari:
+      connection-init-sql: SET SCHEMA PUBLIC
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        default_schema: PUBLIC
         format_sql: false
   flyway:
     enabled: false
@@ -27,16 +29,22 @@ security:
 
 firebase:
   enabled: false
+  auth-enabled: false
+  push-enabled: false
 
 app:
   seed:
     enabled: false
-  allowed-origins: http://localhost:4200
+  allowed-origins: http://localhost:4200,http://localhost:5173
+  public-tenant-registration-enabled: false
+  public-leads:
+    notify-to: soporte@insightvisionia.cloud
   sri:
     authorization-poll-delay-ms: 0
     auto-query-after-reception: true
     signature:
       mode: NONE
+      password-master-key: test-sri-signature-master-key-32b
     test:
       reception-url: https://test-recepcion.local
       authorization-url: https://test-autorizacion.local

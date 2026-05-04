@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none" role="img" aria-label="InsightVision">
+  <path d="M40 8L15 20V40C15 58 25 70 40 76C55 70 65 58 65 40V20L40 8Z" stroke="#4F46E5" stroke-width="4" stroke-linejoin="round" fill="#4F46E5" fill-opacity="0.08"/>
+  <path d="M40 8L15 20V40C15 58 25 70 40 76" stroke="#8B5CF6" stroke-width="1.5" stroke-linejoin="round" opacity="0.6"/>
+  <circle cx="40" cy="42" r="12" stroke="#4F46E5" stroke-width="3"/>
+  <circle cx="40" cy="42" r="5" fill="#4F46E5"/>
+  <path d="M25 42L34 42" stroke="#4F46E5" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M46 42L55 42" stroke="#4F46E5" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M40 27L40 36" stroke="#4F46E5" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M40 48L40 57" stroke="#4F46E5" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

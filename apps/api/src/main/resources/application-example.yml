@@ -1,15 +1,24 @@
 spring:
   datasource:
-    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=America/Guayaquil&createDatabaseIfNotExist=true
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}?sslmode=${DB_SSL_MODE:require}&currentSchema=${DB_SCHEMA:bar_app},public}
     username: ${DB_USER}
     password: ${DB_PASS}
+    driver-class-name: ${DB_DRIVER_CLASS_NAME:org.postgresql.Driver}
+    hikari:
+      connection-init-sql: SET search_path TO ${DB_SCHEMA:bar_app}, public
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
+        default_schema: ${DB_SCHEMA:bar_app}
     show-sql: false
+  flyway:
+    enabled: true
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration/postgresql}
+    default-schema: ${DB_SCHEMA:bar_app}
+    schemas: ${DB_SCHEMA:bar_app}
   cache:
     type: caffeine
     cache-names: firebase-tokens, products-public
@@ -31,8 +40,11 @@ security:
     refresh-expiration: 604800
 
 firebase:
-  project-id: ${FIREBASE_PROJECT_ID}
-  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH}
+  project-id: ${FIREBASE_PROJECT_ID:}
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+  enabled: ${FIREBASE_ENABLED:false}
+  auth-enabled: ${FIREBASE_AUTH_ENABLED:false}
+  push-enabled: ${FIREBASE_PUSH_ENABLED:false}
 
 management:
   endpoints:
@@ -41,7 +53,50 @@ management:
         include: health,info,metrics
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
 app:
-  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://localhost:8090}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:${ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://localhost:8090,http://localhost:5173,http://127.0.0.1:5173}}
+  public-tenant-registration-enabled: ${PUBLIC_TENANT_REGISTRATION_ENABLED:false}
+  public-leads:
+    notify-to: ${PUBLIC_LEADS_NOTIFY_TO:soporte@insightvisionia.cloud}
+  sri:
+    connect-timeout-ms: ${SRI_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${SRI_READ_TIMEOUT_MS:15000}
+    authorization-poll-delay-ms: ${SRI_AUTHORIZATION_POLL_DELAY_MS:1500}
+    auto-query-after-reception: ${SRI_AUTO_QUERY_AFTER_RECEPTION:true}
+    signature:
+      mode: ${SRI_SIGNATURE_MODE:NONE}
+      pkcs12-path: ${SRI_PKCS12_PATH:}
+      pkcs12-password: ${SRI_PKCS12_PASSWORD:}
+      key-alias: ${SRI_KEY_ALIAS:}
+      password-master-key: ${SRI_SIGNATURE_PASSWORD_MASTER_KEY:}
+    ride:
+      storage-path: ${SRI_RIDE_STORAGE_PATH:storage/sri/ride}
+      storage-provider: ${SRI_RIDE_STORAGE_PROVIDER:LOCAL}
+      public-base-url: ${SRI_RIDE_PUBLIC_BASE_URL:}
+      supabase-url: ${SUPABASE_URL:}
+      supabase-service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
+      supabase-bucket: ${SRI_RIDE_SUPABASE_BUCKET:facturas-sri}
+      default-sender: ${SRI_RIDE_DEFAULT_SENDER:soporte@insightvisionia.cloud}
+      default-sender-name: ${SRI_RIDE_DEFAULT_SENDER_NAME:Insight Vision IA}
+      email-enabled: ${SRI_RIDE_EMAIL_ENABLED:true}
+      central-relay-enabled: ${SRI_RIDE_CENTRAL_RELAY_ENABLED:false}
+      resend:
+        enabled: ${RESEND_ENABLED:false}
+        api-key: ${RESEND_API_KEY:}
+        base-url: ${RESEND_BASE_URL:https://api.resend.com}
+        from-email: ${RESEND_FROM_EMAIL:soporte@insightvisionia.cloud}
+        from-name: ${RESEND_FROM_NAME:Insight Vision IA}
+        reply-to: ${RESEND_REPLY_TO:soporte@insightvisionia.cloud}
+        webhook-secret: ${RESEND_WEBHOOK_SECRET:}
+        connect-timeout-ms: ${RESEND_CONNECT_TIMEOUT_MS:5000}
+        read-timeout-ms: ${RESEND_READ_TIMEOUT_MS:15000}
+        max-attachment-bytes: ${RESEND_MAX_ATTACHMENT_BYTES:10000000}
+        max-total-attachment-bytes: ${RESEND_MAX_TOTAL_ATTACHMENT_BYTES:20000000}
+    test:
+      reception-url: ${SRI_TEST_RECEPTION_URL:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline}
+      authorization-url: ${SRI_TEST_AUTHORIZATION_URL:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline}
+    production:
+      reception-url: ${SRI_PRODUCTION_RECEPTION_URL:https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline}
+      authorization-url: ${SRI_PRODUCTION_AUTHORIZATION_URL:https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline}

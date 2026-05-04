@@ -32,7 +32,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +53,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class OrderService {
 
     private static final String ORDER_REFERENCE_TYPE = "ORDER";
@@ -73,21 +77,29 @@ public class OrderService {
     private final TaxComputationService taxComputationService;
     private final TenantContextResolver tenantContextResolver;
     private final SalesAccountingService salesAccountingService;
+    private final AuditService auditService;
 
     @Transactional
-    @CacheEvict(cacheNames = "products-public", allEntries = true)
-    public OrderResponse createOrder(OrderCreateRequest request, String userEmail) {
-        UserEntity user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+    @CacheEvict(cacheNames = {"products-list", "products-public", "products-low-stock", "dashboard-snapshots", "sales-reports"}, allEntries = true)
+    public OrderResponse createOrder(OrderCreateRequest request, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+            throw new AccessDeniedException("Usuario no autenticado");
+        }
+        UserEntity user = userRepository.findByEmailIgnoreCase(authentication.getName())
+                .filter(item -> Boolean.TRUE.equals(item.getActive()))
+                .orElseThrow(() -> new AccessDeniedException("Usuario no autenticado"));
 
         if (request.getItems().isEmpty()) {
             throw new BadRequestException("El pedido debe contener productos");
         }
 
-        Map<Long, ProductEntity> lockedProducts = lockProducts(extractProductIds(request.getItems()));
+        boolean canApplyManualDiscount = isStaff(authentication);
+        Long tenantId = tenantContextResolver.resolveCurrent().getId();
+        Map<Long, ProductEntity> lockedProducts = lockProducts(tenantId, extractProductIds(request.getItems()));
         validateReservableItems(request.getItems(), lockedProducts);
 
         OrderEntity order = new OrderEntity();
+        order.setTenantId(tenantId);
         order.setUser(user);
         order.setStatus(OrderStatus.PENDING);
         order.setPaymentMethod(PaymentMethod.valueOf(request.getPaymentMethod().name()));
@@ -98,33 +110,43 @@ public class OrderService {
         order.setRefundedAt(null);
         order.setInventoryStatus(InventoryStatus.RESERVED);
         order.setNotes(request.getNotes());
+        applyCustomerData(order, request);
 
-        BigDecimal subtotal = BigDecimal.ZERO;
+        List<TaxComputationService.TaxableLine> taxableLines = new ArrayList<>();
         for (OrderCreateRequest.Item item : request.getItems()) {
             ProductEntity product = lockedProducts.get(item.getProductId());
             validateItem(product, item);
 
             int qty = item.getQuantity();
             OrderItemEntity orderItem = new OrderItemEntity();
+            orderItem.setTenantId(tenantId);
             orderItem.setProduct(product);
             orderItem.setQuantity(qty);
-            orderItem.setUnitPrice(item.getUnitPrice());
+            BigDecimal unitPrice = product.getPrice();
+            orderItem.setUnitPrice(unitPrice);
 
-            BigDecimal grossLineTotal = item.getUnitPrice()
+            BigDecimal grossLineTotal = unitPrice
                     .multiply(BigDecimal.valueOf(qty))
                     .setScale(2, RoundingMode.HALF_UP);
-            BigDecimal discountAmount = sanitizeDiscount(item.getDiscountAmount(), grossLineTotal);
+            validateDiscountAuthorization(item.getDiscountAmount(), canApplyManualDiscount);
+            BigDecimal discountAmount = sanitizeDiscount(
+                    canApplyManualDiscount ? item.getDiscountAmount() : null,
+                    grossLineTotal);
             BigDecimal lineTotal = grossLineTotal.subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
             orderItem.setLineTotal(lineTotal);
 
             order.addItem(orderItem);
-            subtotal = subtotal.add(lineTotal);
+            taxableLines.add(new TaxComputationService.TaxableLine(
+                    product.getId(),
+                    qty,
+                    lineTotal.divide(BigDecimal.valueOf(qty), 6, RoundingMode.HALF_UP)));
         }
-        subtotal = subtotal.setScale(2, RoundingMode.HALF_UP);
-        BigDecimal tax = subtotal.multiply(BigDecimal.valueOf(0.15d)).setScale(2, RoundingMode.HALF_UP);
-        order.setSubtotal(subtotal);
-        order.setTax(tax);
-        order.setTotal(subtotal.add(tax).setScale(2, RoundingMode.HALF_UP));
+        TaxSummary taxSummary = taxComputationService.calculate(
+                tenantContextResolver.resolveCurrent().getId(),
+                taxableLines);
+        order.setSubtotal(taxSummary.subtotal());
+        order.setTax(taxSummary.taxAmount());
+        order.setTotal(taxSummary.total());
 
         OrderEntity saved = orderRepository.save(order);
         orderItemRepository.saveAll(saved.getItems());
@@ -132,6 +154,8 @@ public class OrderService {
 
         log.info("Order {} created for {} with {} items and reserved inventory", saved.getId(), user.getEmail(),
                 saved.getItems().size());
+        auditService.logAction(user.getEmail(), "ORDER_CREATE", "Order", saved.getId(),
+                "items=" + saved.getItems().size() + " total=" + saved.getTotal());
         publishAvailabilityChange();
         publishOrderEvent("created", saved);
         dashboardService.publishSnapshotAsync();
@@ -140,39 +164,63 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public Page<OrderResponse> list(OrderStatus status, TransactionStatus transactionStatus, Pageable pageable) {
-        Page<OrderEntity> orders = transactionStatus != null
-                ? orderRepository.findByTransactionStatus(transactionStatus, pageable)
-                : status != null
-                ? orderRepository.findByStatus(status, pageable)
-                : orderRepository.findAll(pageable);
-        return orders.map(OrderMapper::toResponse);
+        Long tenantId = tenantContextResolver.resolveCurrent().getId();
+        Page<OrderEntity> orders;
+        if (status != null && transactionStatus != null) {
+            orders = orderRepository.findByTenantIdAndStatusAndTransactionStatus(tenantId, status, transactionStatus, pageable);
+        } else if (transactionStatus != null) {
+            orders = orderRepository.findByTenantIdAndTransactionStatus(tenantId, transactionStatus, pageable);
+        } else if (status != null) {
+            orders = orderRepository.findByTenantIdAndStatus(tenantId, status, pageable);
+        } else {
+            orders = orderRepository.findByTenantId(tenantId, pageable);
+        }
+        if (orders.isEmpty()) {
+            return orders.map(OrderMapper::toResponse);
+        }
+
+        List<Long> orderIds = orders.getContent().stream()
+                .map(OrderEntity::getId)
+                .toList();
+        Map<Long, OrderEntity> detailedById = new HashMap<>();
+        for (OrderEntity order : orderRepository.findDetailedByTenantIdAndIdIn(tenantId, orderIds)) {
+            detailedById.put(order.getId(), order);
+        }
+        List<OrderResponse> content = orderIds.stream()
+                .map(detailedById::get)
+                .filter(java.util.Objects::nonNull)
+                .map(OrderMapper::toResponse)
+                .toList();
+        return new PageImpl<>(content, pageable, orders.getTotalElements());
     }
 
     @Transactional(readOnly = true)
-    public OrderResponse get(Long id) {
-        OrderEntity order = requireOrder(id);
-        org.hibernate.Hibernate.initialize(order.getItems());
+    public OrderResponse get(Long id, Authentication authentication) {
+        Long tenantId = tenantContextResolver.resolveCurrent().getId();
+        OrderEntity order = orderRepository.findDetailedByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
+        ensureTenantOwnership(order);
+        ensureCanRead(order, authentication);
         return OrderMapper.toResponse(order);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> previewTotals(List<OrderCreateRequest.Item> items) {
-        BigDecimal subtotal = BigDecimal.ZERO;
+        Long tenantId = tenantContextResolver.resolveCurrent().getId();
+        Map<Long, ProductEntity> productsById = new HashMap<>();
         for (OrderCreateRequest.Item item : items) {
-            ProductEntity product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new NotFoundException("Producto no encontrado: " + item.getProductId()));
-            BigDecimal unitPrice = item.getUnitPrice() != null ? item.getUnitPrice() : product.getPrice();
-            subtotal = subtotal.add(unitPrice.multiply(BigDecimal.valueOf(item.getQuantity())));
+            ProductEntity product = productsById.computeIfAbsent(
+                    item.getProductId(),
+                    productId -> loadProductForTenant(tenantId, productId));
+            validateItem(product, item);
         }
         TaxSummary taxSummary = taxComputationService.calculate(
-                tenantContextResolver.resolveDefault().getId(),
+                tenantId,
                 items.stream()
                         .map(item -> new TaxComputationService.TaxableLine(
                                 item.getProductId(),
                                 item.getQuantity(),
-                                item.getUnitPrice() != null ? item.getUnitPrice() : productRepository.findById(item.getProductId())
-                                        .orElseThrow(() -> new NotFoundException("Producto no encontrado: " + item.getProductId()))
-                                        .getPrice()))
+                                productsById.get(item.getProductId()).getPrice()))
                         .toList());
         return Map.of(
                 "subtotal", taxSummary.subtotal(),
@@ -261,7 +309,7 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "products-public", allEntries = true)
+    @CacheEvict(cacheNames = {"products-list", "products-public", "products-low-stock", "dashboard-snapshots", "sales-reports"}, allEntries = true)
     public OrderResponse cancel(Long orderId, String reason) {
         OrderEntity order = requireOrderForUpdate(orderId);
         if (order.getTransactionStatus() == TransactionStatus.CANCELLED
@@ -289,6 +337,8 @@ public class OrderService {
         if (previousInventoryStatus != InventoryStatus.RELEASED) {
             publishAvailabilityChange();
         }
+        auditService.logAction(currentUserEmail(), "ORDER_CANCEL", "Order", saved.getId(),
+                "reason=" + (reason != null ? reason : DEFAULT_CANCEL_REASON));
         publishOrderEvent("cancelled", saved);
         publishPaymentEvent(saved);
         dashboardService.publishSnapshotAsync();
@@ -296,7 +346,7 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "products-public", allEntries = true)
+    @CacheEvict(cacheNames = {"products-list", "products-public", "products-low-stock", "dashboard-snapshots", "sales-reports"}, allEntries = true)
     public OrderResponse refund(Long orderId, String reason) {
         OrderEntity order = requireOrderForUpdate(orderId);
         if (order.getTransactionStatus() != TransactionStatus.PAID) {
@@ -315,6 +365,8 @@ public class OrderService {
 
         OrderEntity saved = orderRepository.save(order);
         salesAccountingService.postRefund(saved);
+        auditService.logAction(currentUserEmail(), "ORDER_REFUND", "Order", saved.getId(),
+                "total=" + saved.getTotal() + " reason=" + (reason != null ? reason : DEFAULT_REFUND_REASON));
         publishAvailabilityChange();
         publishOrderEvent("refunded", saved);
         publishPaymentEvent(saved);
@@ -323,13 +375,13 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "products-public", allEntries = true)
+    @CacheEvict(cacheNames = {"products-list", "products-public", "products-low-stock", "dashboard-snapshots", "sales-reports"}, allEntries = true)
     public OrderResponse pay(Long orderId, String method, String reference) {
         return pay(orderId, method, reference, null);
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "products-public", allEntries = true)
+    @CacheEvict(cacheNames = {"products-list", "products-public", "products-low-stock", "dashboard-snapshots", "sales-reports"}, allEntries = true)
     public OrderResponse pay(Long orderId, String method, String reference, String paymentBreakdownJson) {
         OrderEntity order = requireOrderForUpdate(orderId);
         if (order.getTransactionStatus() == TransactionStatus.CANCELLED
@@ -373,7 +425,7 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "products-public", allEntries = true)
+    @CacheEvict(cacheNames = {"products-list", "products-public", "products-low-stock", "dashboard-snapshots", "sales-reports"}, allEntries = true)
     public OrderResponse confirmPayment(Long orderId, String reference) {
         OrderEntity order = requireOrderForUpdate(orderId);
         if (order.getTransactionStatus() == TransactionStatus.CANCELLED
@@ -386,14 +438,24 @@ public class OrderService {
         return finalizePayment(order);
     }
 
+    private void ensureTenantOwnership(OrderEntity order) {
+        Long current = tenantContextResolver.resolveCurrent().getId();
+        if (order.getTenantId() == null || !order.getTenantId().equals(current)) {
+            throw new NotFoundException("Pedido no encontrado");
+        }
+    }
+
     private OrderEntity requireOrder(Long id) {
-        return orderRepository.findById(id)
+        Long tenantId = tenantContextResolver.resolveCurrent().getId();
+        return orderRepository.findByTenantIdAndId(tenantId, id)
                 .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
     }
 
     private OrderEntity requireOrderForUpdate(Long id) {
-        return orderRepository.findByIdForUpdate(id)
+        Long tenantId = tenantContextResolver.resolveCurrent().getId();
+        OrderEntity order = orderRepository.findByTenantIdAndIdForUpdate(tenantId, id)
                 .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
+        return order;
     }
 
     private OrderResponse finalizePayment(OrderEntity order) {
@@ -426,6 +488,8 @@ public class OrderService {
 
         OrderEntity saved = orderRepository.save(order);
         salesAccountingService.postPaidOrder(saved);
+        auditService.logAction(currentUserEmail(), "ORDER_PAY", "Order", saved.getId(),
+                "method=" + saved.getPaymentMethod() + " total=" + saved.getTotal());
         if (inventoryCommitted) {
             publishAvailabilityChange();
         }
@@ -434,14 +498,67 @@ public class OrderService {
         return OrderMapper.toResponse(saved);
     }
 
-    private void validatePrice(ProductEntity product, BigDecimal requestedPrice) {
-        if (requestedPrice == null) {
-            throw new BadRequestException("El precio unitario es obligatorio");
+    private String currentUserEmail() {
+        try {
+            var auth = org.springframework.security.core.context.SecurityContextHolder
+                    .getContext().getAuthentication();
+            return auth != null ? auth.getName() : null;
+        } catch (Exception ex) {
+            return null;
         }
-        if (product.getPrice().compareTo(requestedPrice) != 0) {
-            log.debug("Override price for product {} from {} to {}", product.getId(), product.getPrice(),
-                    requestedPrice);
+    }
+
+    private void applyCustomerData(OrderEntity order, OrderCreateRequest request) {
+        OrderEntity.DocumentType documentType = request.getDocumentType() == null
+                ? OrderEntity.DocumentType.NOTA_VENTA
+                : OrderEntity.DocumentType.valueOf(request.getDocumentType().name());
+        order.setDocumentType(documentType);
+        order.setCustomerName(trimToNull(request.getCustomerName()));
+        order.setCustomerEmail(trimToNull(request.getCustomerEmail()));
+        String identification = digitsOnly(request.getCustomerIdentification());
+        order.setCustomerIdentification(identification.isBlank() ? null : identification);
+        order.setCustomerIdentificationType(resolveIdentificationType(order.getCustomerIdentification()));
+        order.setCustomerAddress(trimToNull(request.getCustomerAddress()));
+        order.setCustomerPhone(trimToNull(request.getCustomerPhone()));
+
+        if (documentType == OrderEntity.DocumentType.FACTURA) {
+            if (order.getCustomerIdentification() == null) {
+                throw new BadRequestException("La factura electronica requiere identificacion del cliente");
+            }
+            int idLength = order.getCustomerIdentification().length();
+            if (idLength != 10 && idLength != 13) {
+                throw new BadRequestException("La identificacion debe tener 10 (cedula) o 13 (RUC) digitos");
+            }
+            if (order.getCustomerName() == null) {
+                throw new BadRequestException("La factura electronica requiere razon social del cliente");
+            }
+            if (order.getCustomerAddress() == null) {
+                throw new BadRequestException("La factura electronica requiere la direccion del cliente");
+            }
         }
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String digitsOnly(String value) {
+        return value == null ? "" : value.replaceAll("\\D", "");
+    }
+
+    private String resolveIdentificationType(String identification) {
+        if (identification == null || identification.isBlank()) {
+            return "07";
+        }
+        return switch (identification.length()) {
+            case 13 -> "04";
+            case 10 -> "05";
+            default -> "06";
+        };
     }
 
     private BigDecimal sanitizeDiscount(BigDecimal requestedDiscount, BigDecimal grossLineTotal) {
@@ -475,7 +592,6 @@ public class OrderService {
         if (item.getQuantity() == null || item.getQuantity() <= 0) {
             throw new BadRequestException("Cantidad invalida para el producto " + product.getName());
         }
-        validatePrice(product, item.getUnitPrice());
     }
 
     private void validateReservableItems(List<OrderCreateRequest.Item> items, Map<Long, ProductEntity> lockedProducts) {
@@ -487,7 +603,6 @@ public class OrderService {
             validateItem(product, OrderCreateRequest.Item.builder()
                     .productId(entry.getKey())
                     .quantity(entry.getValue())
-                    .unitPrice(product.getPrice())
                     .build());
 
             int reserved = reservedQuantities.getOrDefault(entry.getKey(), 0);
@@ -500,7 +615,7 @@ public class OrderService {
 
     private void commitReservedInventory(OrderEntity order) {
         Map<Long, Integer> quantities = aggregateOrderItemQuantities(order.getItems());
-        Map<Long, ProductEntity> lockedProducts = lockProducts(new ArrayList<>(quantities.keySet()));
+        Map<Long, ProductEntity> lockedProducts = lockProducts(order.getTenantId(), new ArrayList<>(quantities.keySet()));
 
         for (Map.Entry<Long, Integer> entry : quantities.entrySet()) {
             ProductEntity product = lockedProducts.get(entry.getKey());
@@ -536,7 +651,7 @@ public class OrderService {
         }
         String movementReason = reason != null && !reason.isBlank() ? reason : DEFAULT_CANCEL_REASON;
         Map<Long, Integer> quantities = aggregateOrderItemQuantities(order.getItems());
-        Map<Long, ProductEntity> lockedProducts = lockProducts(new ArrayList<>(quantities.keySet()));
+        Map<Long, ProductEntity> lockedProducts = lockProducts(order.getTenantId(), new ArrayList<>(quantities.keySet()));
         boolean inventoryChanged = false;
 
         for (Map.Entry<Long, Integer> entry : quantities.entrySet()) {
@@ -578,7 +693,7 @@ public class OrderService {
 
         String movementReason = reason != null && !reason.isBlank() ? reason : DEFAULT_REFUND_REASON;
         Map<Long, Integer> quantities = aggregateOrderItemQuantities(order.getItems());
-        Map<Long, ProductEntity> lockedProducts = lockProducts(new ArrayList<>(quantities.keySet()));
+        Map<Long, ProductEntity> lockedProducts = lockProducts(order.getTenantId(), new ArrayList<>(quantities.keySet()));
 
         for (Map.Entry<Long, Integer> entry : quantities.entrySet()) {
             ProductEntity product = lockedProducts.get(entry.getKey());
@@ -603,7 +718,7 @@ public class OrderService {
         order.setInventoryStatus(InventoryStatus.RELEASED);
     }
 
-    private Map<Long, ProductEntity> lockProducts(List<Long> productIds) {
+    private Map<Long, ProductEntity> lockProducts(Long tenantId, List<Long> productIds) {
         if (productIds.isEmpty()) {
             return Map.of();
         }
@@ -613,7 +728,7 @@ public class OrderService {
                 .sorted(Comparator.naturalOrder())
                 .toList();
 
-        List<ProductEntity> products = productRepository.findAllByIdInOrderByIdForUpdate(sortedIds);
+        List<ProductEntity> products = productRepository.findAllByTenantIdAndIdInOrderByIdForUpdate(tenantId, sortedIds);
         if (products.size() != sortedIds.size()) {
             List<Long> foundIds = products.stream().map(ProductEntity::getId).toList();
             Long missingId = sortedIds.stream().filter(id -> !foundIds.contains(id)).findFirst().orElse(null);
@@ -625,6 +740,11 @@ public class OrderService {
             byId.put(product.getId(), product);
         }
         return byId;
+    }
+
+    private ProductEntity loadProductForTenant(Long tenantId, Long productId) {
+        return productRepository.findByTenantIdAndId(tenantId, productId)
+                .orElseThrow(() -> new NotFoundException("Producto no encontrado: " + productId));
     }
 
     private List<Long> extractProductIds(List<OrderCreateRequest.Item> items) {
@@ -655,7 +775,8 @@ public class OrderService {
         }
 
         Map<Long, Integer> quantities = new HashMap<>();
-        for (Object[] row : orderItemRepository.sumReservedQuantitiesByProductIds(productIds)) {
+        Long tenantId = tenantContextResolver.resolveCurrent().getId();
+        for (Object[] row : orderItemRepository.sumReservedQuantitiesByProductIdsAndTenantId(tenantId, productIds)) {
             Long productId = ((Number) row[0]).longValue();
             Integer quantity = row[1] != null ? ((Number) row[1]).intValue() : 0;
             quantities.put(productId, quantity);
@@ -672,6 +793,38 @@ public class OrderService {
         }
         if (order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.COMPLETED) {
             throw new BadRequestException("La orden ya no admite cambios operativos");
+        }
+    }
+
+    private void ensureCanRead(OrderEntity order, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Usuario no autenticado");
+        }
+        if (isStaff(authentication)) {
+            return;
+        }
+        String requester = authentication.getName();
+        String owner = order.getUser() != null ? order.getUser().getEmail() : null;
+        if (owner != null && owner.equalsIgnoreCase(requester)) {
+            return;
+        }
+        throw new AccessDeniedException("No puede acceder a esta orden");
+    }
+
+    private boolean isStaff(Authentication authentication) {
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority())
+                        || "ROLE_CASHIER".equals(authority.getAuthority()));
+    }
+
+    private void validateDiscountAuthorization(BigDecimal requestedDiscount, boolean canApplyManualDiscount) {
+        if (!canApplyManualDiscount
+                && requestedDiscount != null
+                && requestedDiscount.compareTo(BigDecimal.ZERO) > 0) {
+            throw new AccessDeniedException("No puede aplicar descuentos manuales");
         }
     }
 
@@ -698,6 +851,9 @@ public class OrderService {
                                                    int stockAfter,
                                                    String reason) {
         StockMovementEntity movement = new StockMovementEntity();
+        if (order.getTenantId() != null) {
+            movement.setTenantId(order.getTenantId());
+        }
         movement.setProduct(product);
         movement.setType(movementType);
         movement.setQuantity(Math.abs(quantity));
@@ -714,41 +870,48 @@ public class OrderService {
         if (order.getUser() != null) {
             return order.getUser();
         }
-        return userRepository.findByEmail("admin@ucacue.com")
-                .orElseThrow(() -> new NotFoundException("No existe un usuario para auditar movimientos"));
+        throw new NotFoundException("La orden no tiene un usuario asociado para auditar movimientos");
     }
 
     private void publishOrderEvent(String type, OrderEntity order) {
-        org.hibernate.Hibernate.initialize(order.getItems());
-        var orderResponse = OrderMapper.toResponse(order);
-        Integer estimatedMinutes = estimateMinutesFromOrder(order);
-        realtimeGateway.sales(Map.of(
-                "type", type,
-                "order", orderResponse));
+        try {
+            org.hibernate.Hibernate.initialize(order.getItems());
+            var orderResponse = OrderMapper.toResponse(order);
+            Integer estimatedMinutes = estimateMinutesFromOrder(order);
+            realtimeGateway.sales(Map.of(
+                    "type", type,
+                    "order", orderResponse));
 
-        var notifyPayload = new HashMap<String, Object>();
-        notifyPayload.put("type", type);
-        notifyPayload.put("orderId", order.getId());
-        notifyPayload.put("status", order.getStatus());
-        notifyPayload.put("estimatedMinutes", estimatedMinutes);
-        notifyPayload.put("estimatedReadyAt", order.getEstimatedReadyAt());
-        notifyPayload.put("preparationStartAt", order.getPreparationStartAt());
-        notifyPayload.put("actualReadyAt", order.getActualReadyAt());
-        if (order.getStatus() == OrderStatus.READY) {
-            notifyPayload.put("pickupLocation", "Mostrador Principal");
+            var notifyPayload = new HashMap<String, Object>();
+            notifyPayload.put("type", type);
+            notifyPayload.put("orderId", order.getId());
+            notifyPayload.put("status", order.getStatus());
+            notifyPayload.put("estimatedMinutes", estimatedMinutes);
+            notifyPayload.put("estimatedReadyAt", order.getEstimatedReadyAt());
+            notifyPayload.put("preparationStartAt", order.getPreparationStartAt());
+            notifyPayload.put("actualReadyAt", order.getActualReadyAt());
+            if (order.getStatus() == OrderStatus.READY) {
+                notifyPayload.put("pickupLocation", "Mostrador Principal");
+            }
+            realtimeGateway.notifyChannel(notifyPayload);
+            realtimeGateway.orders(type, Map.of(
+                    "type", "order." + type,
+                    "order", orderResponse));
+        } catch (Exception ex) {
+            log.warn("Unable to publish order event {}", type, ex);
         }
-        realtimeGateway.notifyChannel(notifyPayload);
-        realtimeGateway.orders(type, Map.of(
-                "type", "order." + type,
-                "order", orderResponse));
     }
 
     private void publishPaymentEvent(OrderEntity order) {
-        var payload = Map.of(
-                "type", "ORDER_PAYMENT_UPDATED",
-                "order", OrderMapper.toResponse(order));
-        realtimeGateway.sales(payload);
-        realtimeGateway.notifyChannel(payload);
+        try {
+            var payload = Map.of(
+                    "type", "ORDER_PAYMENT_UPDATED",
+                    "order", OrderMapper.toResponse(order));
+            realtimeGateway.sales(payload);
+            realtimeGateway.notifyChannel(payload);
+        } catch (Exception ex) {
+            log.warn("Unable to publish payment event for order {}", order.getId(), ex);
+        }
     }
 
     private void publishAvailabilityChange() {
